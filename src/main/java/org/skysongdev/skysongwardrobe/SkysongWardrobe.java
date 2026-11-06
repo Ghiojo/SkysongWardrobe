@@ -1,15 +1,20 @@
 package org.skysongdev.skysongwardrobe;
 
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.skysongdev.skysongitems.api.SkysongItemsApi;
+import org.skysongdev.skysongwardrobe.commands.ReloadCommand;
+import org.skysongdev.skysongwardrobe.commands.WardrobeCommands;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.gallery.GalleryFolderListener;
 import org.skysongdev.skysongwardrobe.gallery.GalleryFolders;
+import org.skysongdev.skysongwardrobe.gallery.GalleryRepository;
 import org.skysongdev.skysongwardrobe.gallery.MojangNameLookup;
 import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 import java.util.logging.Level;
 
 /**
@@ -23,6 +28,7 @@ public class SkysongWardrobe extends JavaPlugin {
 
     private PluginConfiguration configuration;
     private GalleryFolders galleryFolders;
+    private GalleryRepository galleries;
 
     @Override
     public void onEnable() {
@@ -41,6 +47,10 @@ public class SkysongWardrobe extends JavaPlugin {
             getLogger().log(Level.SEVERE, "Could not read the skins folder.", failed);
         }
         getServer().getPluginManager().registerEvents(new GalleryFolderListener(this, galleryFolders), this);
+        galleries = new GalleryRepository(galleryFolders, getLogger());
+
+        WardrobeCommands commands = new WardrobeCommands(List.of(new ReloadCommand(configuration)));
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> commands.register(event.registrar()));
     }
 
     @Override
@@ -56,5 +66,10 @@ public class SkysongWardrobe extends JavaPlugin {
     /** Where each player's gallery folder is. */
     public GalleryFolders galleryFolders() {
         return galleryFolders;
+    }
+
+    /** One loaded gallery per player. */
+    public GalleryRepository galleries() {
+        return galleries;
     }
 }
