@@ -4,15 +4,23 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.skysongdev.skysongitems.api.SkysongItemsApi;
 import org.skysongdev.skysongwardrobe.commands.ReloadCommand;
+import org.skysongdev.skysongwardrobe.commands.UploadCommand;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommands;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
+import org.skysongdev.skysongwardrobe.config.WardrobeSettings;
+import org.skysongdev.skysongwardrobe.download.SkinDownloader;
+import org.skysongdev.skysongwardrobe.download.SkinSource;
 import org.skysongdev.skysongwardrobe.gallery.GalleryFolderListener;
 import org.skysongdev.skysongwardrobe.gallery.GalleryFolders;
 import org.skysongdev.skysongwardrobe.gallery.GalleryRepository;
 import org.skysongdev.skysongwardrobe.gallery.MojangNameLookup;
+import org.skysongdev.skysongwardrobe.gallery.SkinUploader;
 import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
+import org.skysongdev.skysongwardrobe.prompt.DialogConfirmationPrompt;
+import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
 
 import java.io.IOException;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.logging.Level;
@@ -49,8 +57,18 @@ public class SkysongWardrobe extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GalleryFolderListener(this, galleryFolders), this);
         galleries = new GalleryRepository(galleryFolders, getLogger());
 
-        WardrobeCommands commands = new WardrobeCommands(List.of(new ReloadCommand(configuration)));
+        SkinUploader uploader = new SkinUploader(galleries, () -> downloader(configuration.settings()),
+                new DialogConfirmationPrompt(), configuration, new BukkitTaskRunner(this), Clock.systemUTC(), getLogger());
+
+        WardrobeCommands commands = new WardrobeCommands(List.of(
+                new ReloadCommand(configuration),
+                new UploadCommand(uploader, configuration)));
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> commands.register(event.registrar()));
+    }
+
+    /** Built per upload, so a reload's new size limit and timeout apply at once. */
+    private static SkinSource downloader(WardrobeSettings settings) {
+        return new SkinDownloader(Duration.ofSeconds(settings.downloadTimeoutSeconds()), settings.maxDownloadKb() * 1024);
     }
 
     @Override
