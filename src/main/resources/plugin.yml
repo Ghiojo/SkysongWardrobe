@@ -1,0 +1,4 @@
+name: SkysongWardrobe
+version: '1.0'
+main: org.skysongdev.skysongWardrobe.SkysongWardrobe
+api-version: '1.21'
