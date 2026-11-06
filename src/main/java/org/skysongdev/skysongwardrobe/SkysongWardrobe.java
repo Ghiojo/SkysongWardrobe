@@ -1,6 +1,7 @@
 package org.skysongdev.skysongwardrobe;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 
 /**
  * Entry point of SkysongWardrobe. It only builds and wires the plugin's parts;
@@ -9,14 +10,24 @@ import org.bukkit.plugin.java.JavaPlugin;
  * <p>Not final, because MockBukkit loads the plugin in tests through a generated subclass.
  */
 public class SkysongWardrobe extends JavaPlugin {
+    private PluginConfiguration configuration;
 
     @Override
     public void onEnable() {
-        // Features register here as they are added.
+        configuration = new PluginConfiguration(this);
+        configuration.reload();
+        if (!configuration.settings().hasMineSkinApiKey()) {
+            getLogger().warning("No MineSkin API key in config.yml, so skins will not render.");
+        }
     }
 
     @Override
     public void onDisable() {
         // Nothing to release yet.
+    }
+
+    /** The loaded config.yml and messages.yml. */
+    public PluginConfiguration configuration() {
+        return configuration;
     }
 }
