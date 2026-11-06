@@ -7,6 +7,7 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Logger;
@@ -47,7 +48,7 @@ class GalleryRepositoryTest {
     @Test
     void movedFolderIsReloadedFromItsNewPlace() throws IOException {
         PlayerGallery alice = repository.claim(ALICE, "Steve");
-        alice.add(new SkinEntry(new SkinId("cape"), "Cape", Optional.empty(), URI.create("https://e.com/c.png")), new byte[] {1});
+        alice.add(new SkinEntry(new SkinId("cape"), "Cape", Optional.empty(), URI.create("https://e.com/c.png"), Instant.parse("2026-11-06T12:00:00Z")), new byte[] {1});
 
         repository.claim(BOB, "Steve");
 

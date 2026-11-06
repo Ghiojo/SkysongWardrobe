@@ -8,6 +8,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -15,7 +16,7 @@ import java.util.Set;
  * so call it off the main thread. Reads at most {@code maxBytes} + 1 bytes, whatever the
  * server claims, so a huge file can't fill memory.
  */
-public final class SkinDownloader {
+public final class SkinDownloader implements SkinSource {
     private static final Set<String> SCHEMES = Set.of("http", "https");
     private static final int OK_MIN = 200;
     private static final int OK_MAX = 299;
@@ -33,16 +34,24 @@ public final class SkinDownloader {
         this.maxBytes = maxBytes;
     }
 
-    public DownloadResult download(String link) {
-        URI uri;
+    /** The link as a URI if it is an http or https link with a host, which is all this downloads. */
+    public static Optional<URI> httpLink(String link) {
         try {
-            uri = URI.create(link.trim());
+            URI uri = URI.create(link.trim());
+            boolean http = uri.getScheme() != null && SCHEMES.contains(uri.getScheme().toLowerCase(Locale.ROOT));
+            return http && uri.getHost() != null ? Optional.of(uri) : Optional.empty();
         } catch (IllegalArgumentException notALink) {
+            return Optional.empty();
+        }
+    }
+
+    @Override
+    public DownloadResult download(String link) {
+        Optional<URI> checked = httpLink(link);
+        if (checked.isEmpty()) {
             return DownloadResult.failed(DownloadFailure.INVALID_LINK);
         }
-        if (uri.getScheme() == null || !SCHEMES.contains(uri.getScheme().toLowerCase(Locale.ROOT)) || uri.getHost() == null) {
-            return DownloadResult.failed(DownloadFailure.INVALID_LINK);
-        }
+        URI uri = checked.get();
         byte[] bytes;
         try {
             HttpResponse<InputStream> response = client.send(
