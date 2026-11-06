@@ -3,7 +3,14 @@ package org.skysongdev.skysongwardrobe;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.skysongdev.skysongitems.api.SkysongItemsApi;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
+import org.skysongdev.skysongwardrobe.gallery.GalleryFolderListener;
+import org.skysongdev.skysongwardrobe.gallery.GalleryFolders;
+import org.skysongdev.skysongwardrobe.gallery.MojangNameLookup;
 import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
+
+import java.io.IOException;
+import java.time.Duration;
+import java.util.logging.Level;
 
 /**
  * Entry point of SkysongWardrobe. It only builds and wires the plugin's parts;
@@ -12,7 +19,10 @@ import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
  * <p>Not final, because MockBukkit loads the plugin in tests through a generated subclass.
  */
 public class SkysongWardrobe extends JavaPlugin {
+    private static final Duration NAME_LOOKUP_TIMEOUT = Duration.ofSeconds(5);
+
     private PluginConfiguration configuration;
+    private GalleryFolders galleryFolders;
 
     @Override
     public void onEnable() {
@@ -22,6 +32,15 @@ public class SkysongWardrobe extends JavaPlugin {
             getLogger().warning("No MineSkin API key in config.yml, so skins will not render.");
         }
         getServer().getPluginManager().registerEvents(new TagRegistrationListener(this, SkysongItemsApi::get), this);
+
+        galleryFolders = new GalleryFolders(getDataFolder().toPath().resolve("skins"),
+                new MojangNameLookup(NAME_LOOKUP_TIMEOUT), getLogger());
+        try {
+            galleryFolders.scan();
+        } catch (IOException failed) {
+            getLogger().log(Level.SEVERE, "Could not read the skins folder.", failed);
+        }
+        getServer().getPluginManager().registerEvents(new GalleryFolderListener(this, galleryFolders), this);
     }
 
     @Override
@@ -32,5 +51,10 @@ public class SkysongWardrobe extends JavaPlugin {
     /** The loaded config.yml and messages.yml. */
     public PluginConfiguration configuration() {
         return configuration;
+    }
+
+    /** Where each player's gallery folder is. */
+    public GalleryFolders galleryFolders() {
+        return galleryFolders;
     }
 }
