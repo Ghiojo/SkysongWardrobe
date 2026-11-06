@@ -1,7 +1,9 @@
 package org.skysongdev.skysongwardrobe;
 
 import org.bukkit.plugin.java.JavaPlugin;
+import org.skysongdev.skysongitems.api.SkysongItemsApi;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
+import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
 
 /**
  * Entry point of SkysongWardrobe. It only builds and wires the plugin's parts;
@@ -19,6 +21,7 @@ public class SkysongWardrobe extends JavaPlugin {
         if (!configuration.settings().hasMineSkinApiKey()) {
             getLogger().warning("No MineSkin API key in config.yml, so skins will not render.");
         }
+        getServer().getPluginManager().registerEvents(new TagRegistrationListener(this, SkysongItemsApi::get), this);
     }
 
     @Override
