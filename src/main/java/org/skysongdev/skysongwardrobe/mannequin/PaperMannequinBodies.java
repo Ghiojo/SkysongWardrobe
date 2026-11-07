@@ -41,8 +41,9 @@ public final class PaperMannequinBodies implements MannequinBodies {
             EntityEquipment worn = mannequin.getEquipment();
             for (EquipmentSlot slot : EquipmentSlot.values()) {
                 if (mannequin.canUseEquipmentSlot(slot)) {
+                    // No drop chance: a mannequin isn't a mob, so Paper refuses one. It never dies
+                    // anyway, and breaking it drops its wardrobe instead.
                     worn.setItem(slot, equipment.getOrDefault(slot, ItemStack.empty()));
-                    worn.setDropChance(slot, 0f);
                 }
             }
         });
