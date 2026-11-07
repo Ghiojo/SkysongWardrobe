@@ -26,11 +26,15 @@ import org.skysongdev.skysongwardrobe.gallery.SkinUploader;
 import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
 import org.skysongdev.skysongwardrobe.items.SkysongItemsTagGateway;
 import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinBodies;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinMarker;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinPlaceListener;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinPlacer;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinRenderer;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinRepository;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinSkinApplier;
 import org.skysongdev.skysongwardrobe.mannequin.OrphanMannequinListener;
+import org.skysongdev.skysongwardrobe.mannequin.PaperMannequinBodies;
 import org.skysongdev.skysongwardrobe.mannequin.PaperMannequinSpawner;
 import org.skysongdev.skysongwardrobe.menu.MenuListener;
 import org.skysongdev.skysongwardrobe.prompt.DialogConfirmationPrompt;
@@ -83,6 +87,7 @@ public class SkysongWardrobe extends JavaPlugin {
     private MannequinRepository mannequins;
     private WardrobeRepository mannequinWardrobes;
     private MannequinMarker mannequinMarker;
+    private MannequinBodies mannequinBodies;
 
     @Override
     public void onEnable() {
@@ -121,8 +126,9 @@ public class SkysongWardrobe extends JavaPlugin {
         WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes, itemTags, configuration, getServer());
         getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobes, configuration, getServer(), getLogger()), this);
         getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer()), this);
-        loadMannequins(itemTags);
-        startRendering(itemTags);
+        loadMannequins();
+        OutfitRenderer outfits = startRendering(itemTags);
+        startMannequins(itemTags, outfits);
         hookSkysongStats();
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -132,15 +138,21 @@ public class SkysongWardrobe extends JavaPlugin {
     }
 
     /** Reads every placed mannequin and their wardrobes, and clears out mannequins broken earlier. */
-    private void loadMannequins(Supplier<ItemTagGateway> itemTags) {
+    private void loadMannequins() {
         mannequins = MannequinRepository.load(getDataFolder().toPath().resolve("mannequins"), getLogger());
         mannequinWardrobes = new WardrobeRepository(getDataFolder().toPath().resolve("mannequins").resolve("wardrobes"),
                 getLogger());
         mannequinMarker = new MannequinMarker(this);
         getServer().getPluginManager().registerEvents(
                 new OrphanMannequinListener(mannequins, mannequinMarker, getLogger()), this);
+    }
+
+    /** Placing mannequins, and dressing and rendering them through the shared outfit renderer. */
+    private void startMannequins(Supplier<ItemTagGateway> itemTags, OutfitRenderer outfits) {
+        MannequinRenderer renderer = new MannequinRenderer(mannequins, mannequinWardrobes, configuration, outfits,
+                mannequinBodies, new BukkitTaskRunner(this), getLogger());
         MannequinPlacer placer = new MannequinPlacer(mannequins, mannequinMarker, new PaperMannequinSpawner(), itemTags,
-                configuration, mannequin -> { }, getLogger());
+                configuration, mannequin -> renderer.render(mannequin.id()), getLogger());
         getServer().getPluginManager().registerEvents(new MannequinPlaceListener(placer, configuration::messages), this);
     }
 
@@ -157,18 +169,25 @@ public class SkysongWardrobe extends JavaPlugin {
         }
     }
 
-    /** Wires the skin pipeline: wardrobe changes render, the queue signs through MineSkin, the applier shows the result. */
-    private void startRendering(Supplier<ItemTagGateway> itemTags) {
+    /**
+     * Wires the skin pipeline: wardrobe changes render, the queue signs through MineSkin, the
+     * appliers show the result on players and mannequins. Returns the renderer mannequins share.
+     */
+    private OutfitRenderer startRendering(Supplier<ItemTagGateway> itemTags) {
         BukkitTaskRunner tasks = new BukkitTaskRunner(this);
         TextureCache cache = TextureCache.load(getDataFolder().toPath().resolve("texture-cache.yml"));
         BaseSkins bases = new BaseSkins(cache, new HttpImageFetcher(BASE_SKIN_TIMEOUT),
                 () -> configuration.settings().verbose(), getLogger());
         SkinApplier applier = new SkinApplier(getServer(), tasks);
+        mannequinBodies = new PaperMannequinBodies(getServer());
+        MannequinSkinApplier mannequinApplier = new MannequinSkinApplier(mannequinBodies, tasks);
+        getServer().getPluginManager().registerEvents(mannequinApplier, this);
         ConfiguredSigner signer = new ConfiguredSigner(() -> configuration.settings().mineSkinApiKey(),
                 key -> new MineSkinSigner(MineSkinSigner.client(key), DEFAULT_RATE_LIMIT_WAIT));
         renderQueue = RenderQueue.load(getDataFolder().toPath().resolve("render-queue.yml"), signer, cache,
                 () -> Duration.ofSeconds(configuration.settings().uploadCooldownSeconds()), Clock.systemUTC(),
-                new RenderRouter().route(WearerKind.PLAYER, applier), getLogger());
+                new RenderRouter().route(WearerKind.PLAYER, applier).route(WearerKind.MANNEQUIN, mannequinApplier),
+                getLogger());
         OutfitRenderer outfits = new OutfitRenderer(
                 () -> new LayerResolver(galleries, itemTags.get(), () -> configuration.settings().verbose(), getLogger()),
                 cache, renderQueue, () -> configuration.settings().hasMineSkinApiKey());
@@ -176,6 +195,7 @@ public class SkysongWardrobe extends JavaPlugin {
                 getServer(), getLogger());
         getServer().getPluginManager().registerEvents(new RenderTrigger(renderer, bases), this);
         getServer().getScheduler().runTaskTimerAsynchronously(this, renderQueue::runNext, QUEUE_PERIOD_TICKS, QUEUE_PERIOD_TICKS);
+        return outfits;
     }
 
     /** Built per upload, so a reload's new size limit and timeout apply at once. */
