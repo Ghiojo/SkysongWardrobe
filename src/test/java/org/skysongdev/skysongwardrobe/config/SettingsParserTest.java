@@ -32,6 +32,7 @@ class SettingsParserTest {
         assertEquals(30, settings.uploadCooldownSeconds());
         assertEquals("", settings.mineSkinApiKey());
         assertFalse(settings.hasMineSkinApiKey());
+        assertEquals(new MannequinSettings(List.of("skysongwardrobe.mannequin"), 0, 15), settings.mannequins());
         assertTrue(parser.warnings().isEmpty());
     }
 
@@ -49,6 +50,10 @@ class SettingsParserTest {
                   upload-cooldown-seconds: 0
                 mineskin:
                   api-key: " abc123 "
+                mannequins:
+                  permissions: [skysongstats.carpenter]
+                  max-per-player: 3
+                  max-per-chunk: 0
                 """));
 
         assertTrue(settings.verbose());
@@ -59,6 +64,7 @@ class SettingsParserTest {
         assertEquals(0, settings.uploadCooldownSeconds());
         assertEquals("abc123", settings.mineSkinApiKey());
         assertTrue(settings.hasMineSkinApiKey());
+        assertEquals(new MannequinSettings(List.of("skysongstats.carpenter"), 3, 0), settings.mannequins());
         assertTrue(parser.warnings().isEmpty());
     }
 
@@ -91,6 +97,27 @@ class SettingsParserTest {
         assertEquals(10, settings.downloadTimeoutSeconds());
         assertEquals(30, settings.uploadCooldownSeconds());
         assertEquals(3, parser.warnings().size());
+    }
+
+    @Test
+    void invalidMannequinLimitsFallBackWithAWarning() throws InvalidConfigurationException {
+        WardrobeSettings settings = parser.parse(yaml("""
+                mannequins:
+                  max-per-player: -1
+                  max-per-chunk: many
+                """));
+
+        assertEquals(0, settings.mannequins().perPlayer());
+        assertEquals(15, settings.mannequins().perChunk());
+        assertEquals(2, parser.warnings().size());
+        assertTrue(parser.warnings().get(1).startsWith("mannequins.max-per-chunk"));
+    }
+
+    @Test
+    void zeroMeansNoLimit() {
+        assertTrue(MannequinSettings.withinLimit(0, 500));
+        assertTrue(MannequinSettings.withinLimit(15, 14));
+        assertFalse(MannequinSettings.withinLimit(15, 15));
     }
 
     @Test
