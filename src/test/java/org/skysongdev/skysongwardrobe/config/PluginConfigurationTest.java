@@ -33,6 +33,27 @@ class PluginConfigurationTest {
     void firstStartWritesBothDefaultFiles() {
         assertTrue(new File(plugin.getDataFolder(), "config.yml").isFile());
         assertTrue(new File(plugin.getDataFolder(), "messages.yml").isFile());
+        assertTrue(new File(plugin.getDataFolder(), "wardrobe.yml").isFile());
+    }
+
+    @Test
+    void bundledLayoutHasCoatGlovesAndBootsInTheSecondColumn() {
+        WardrobeLayout layout = plugin.configuration().layout().orElseThrow();
+
+        assertEquals(List.of("boots", "gloves", "coat"), layout.slots().stream().map(SlotDefinition::id).toList());
+        assertEquals(List.of(28, 19, 10), layout.slots().stream().map(SlotDefinition::position).toList());
+    }
+
+    @Test
+    void brokenLayoutClosesTheWardrobeUntilFixed() throws IOException {
+        File layout = new File(plugin.getDataFolder(), "wardrobe.yml");
+        Files.writeString(layout.toPath(), "slots:\n  coat: {position: 99, accepts: [coat], priority: 1}\n");
+        plugin.configuration().reload();
+        assertTrue(plugin.configuration().layout().isEmpty());
+
+        Files.writeString(layout.toPath(), "slots:\n  coat: {position: 9, accepts: [coat], priority: 1}\n");
+        plugin.configuration().reload();
+        assertEquals(9, plugin.configuration().layout().orElseThrow().slots().getFirst().position());
     }
 
     @Test
