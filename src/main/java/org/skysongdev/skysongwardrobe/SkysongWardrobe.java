@@ -71,6 +71,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Entry point of SkysongWardrobe. It only builds and wires the plugin's parts;
@@ -135,7 +136,7 @@ public class SkysongWardrobe extends JavaPlugin {
 
         DeletedSkinArchive archive = new DeletedSkinArchive(getDataFolder().toPath().resolve("deleted"));
         Supplier<ItemTagGateway> itemTags = () -> new SkysongItemsTagGateway(SkysongItemsApi.get());
-        SkinUploader uploader = new SkinUploader(galleries, archive, () -> downloader(configuration.settings()),
+        SkinUploader uploader = new SkinUploader(galleries, archive, () -> downloader(configuration.settings(), getLogger()),
                 new DialogConfirmationPrompt(), configuration, new BukkitTaskRunner(this), Clock.systemUTC(), getLogger());
 
         WardrobeCommands commands = new WardrobeCommands(List.of(
@@ -243,9 +244,9 @@ public class SkysongWardrobe extends JavaPlugin {
     }
 
     /** Built per upload, so a reload's new size limit and timeout apply at once. */
-    private static SkinSource downloader(WardrobeSettings settings) {
+    private static SkinSource downloader(WardrobeSettings settings, Logger logger) {
         return new SkinDownloader(Duration.ofSeconds(settings.downloadTimeoutSeconds()), settings.maxDownloadKb() * 1024,
-                PublicAddressPolicy.system());
+                PublicAddressPolicy.system(), logger);
     }
 
     @Override

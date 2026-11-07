@@ -15,6 +15,9 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -27,6 +30,8 @@ class SkinDownloaderTest {
     private static final String BLOCKED_HOST = "localhost";
     private final List<String> checkedHosts = new ArrayList<>();
     private final List<String> requests = new ArrayList<>();
+    private final List<String> userAgents = new ArrayList<>();
+    private final List<String> warnings = new ArrayList<>();
     private HttpServer server;
     private SkinDownloader downloader;
 
@@ -44,10 +49,26 @@ class SkinDownloaderTest {
         redirect("/loop.png", "/loop.png");
         server.start();
         // The test server is on loopback, so only BLOCKED_HOST stands in for a private address.
+        Logger logger = Logger.getAnonymousLogger();
+        logger.setUseParentHandlers(false);
+        logger.addHandler(new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                warnings.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        });
         downloader = new SkinDownloader(Duration.ofSeconds(5), MAX_BYTES, host -> {
             checkedHosts.add(host);
             return BLOCKED_HOST.equals(host) ? Optional.of(DownloadFailure.PRIVATE_ADDRESS) : Optional.empty();
-        });
+        }, logger);
     }
 
     @AfterEach
@@ -93,6 +114,21 @@ class SkinDownloaderTest {
     }
 
     @Test
+    void requestsNameThePluginInsteadOfJava() {
+        downloader.download(url("/skin.png"));
+
+        assertEquals(List.of(SkinDownloader.USER_AGENT), userAgents);
+    }
+
+    @Test
+    void anUnreachableLinkIsLoggedWithTheStatus() {
+        downloader.download(url("/missing.png"));
+
+        assertEquals(1, warnings.size());
+        assertTrue(warnings.getFirst().endsWith("/missing.png: HTTP 404"), warnings.getFirst());
+    }
+
+    @Test
     void eachProblemHasItsOwnReason() {
         assertFailure(DownloadFailure.TOO_LARGE, url("/big.png"));
         assertFailure(DownloadFailure.WRONG_SIZE, url("/small.png"));
@@ -130,6 +166,7 @@ class SkinDownloaderTest {
     private void serve(String path, int status, byte[] body) {
         server.createContext(path, exchange -> {
             requests.add(path);
+            userAgents.add(exchange.getRequestHeaders().getFirst("User-Agent"));
             exchange.sendResponseHeaders(status, body.length == 0 ? -1 : body.length);
             try (OutputStream out = exchange.getResponseBody()) {
                 out.write(body);

@@ -10,12 +10,15 @@ import java.time.Duration;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 
 /**
  * Downloads a skin image from a direct link and checks it. Blocks for up to the timeout,
  * so call it off the main thread. Reads at most {@code maxBytes} + 1 bytes, whatever the
  * server claims, so a huge file can't fill memory. Redirects are followed by hand so the
- * address policy checks every host on the way, not only the first.
+ * address policy checks every host on the way, not only the first. Image hosts such as
+ * imgur refuse Java's default client name, so requests name the plugin like a crawler does,
+ * and every unreachable link is logged with the reason, which players don't see.
  */
 public final class SkinDownloader implements SkinSource {
     private static final Set<String> SCHEMES = Set.of("http", "https");
@@ -23,13 +26,16 @@ public final class SkinDownloader implements SkinSource {
     private static final int OK_MAX = 299;
     private static final Set<Integer> REDIRECTS = Set.of(301, 302, 303, 307, 308);
     private static final int MAX_REDIRECTS = 5;
+    static final String USER_AGENT = "Mozilla/5.0 (compatible; SkysongWardrobe; +https://github.com/Ghiojo/SkysongWardrobe)";
+    private static final String ACCEPT = "image/png,image/*;q=0.8";
 
     private final HttpClient client;
     private final Duration timeout;
     private final int maxBytes;
     private final AddressPolicy addresses;
+    private final Logger logger;
 
-    public SkinDownloader(Duration timeout, int maxBytes, AddressPolicy addresses) {
+    public SkinDownloader(Duration timeout, int maxBytes, AddressPolicy addresses, Logger logger) {
         this.client = HttpClient.newBuilder()
                 .connectTimeout(timeout)
                 .followRedirects(HttpClient.Redirect.NEVER)
@@ -37,6 +43,7 @@ public final class SkinDownloader implements SkinSource {
         this.timeout = timeout;
         this.maxBytes = maxBytes;
         this.addresses = addresses;
+        this.logger = logger;
     }
 
     /** The link as a URI if it is an http or https link with a host, which is all this downloads. */
@@ -59,7 +66,7 @@ public final class SkinDownloader implements SkinSource {
         try {
             return fetch(checked.get());
         } catch (IOException | IllegalArgumentException failed) {
-            return DownloadResult.failed(DownloadFailure.UNREACHABLE);
+            return unreachable(checked.get(), failed.getClass().getSimpleName() + ": " + failed.getMessage());
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             return DownloadResult.failed(DownloadFailure.UNREACHABLE);
@@ -74,7 +81,10 @@ public final class SkinDownloader implements SkinSource {
                 return DownloadResult.failed(refused.get());
             }
             HttpResponse<InputStream> response = client.send(
-                    HttpRequest.newBuilder(uri).timeout(timeout).GET().build(),
+                    HttpRequest.newBuilder(uri).timeout(timeout)
+                            .header("User-Agent", USER_AGENT)
+                            .header("Accept", ACCEPT)
+                            .GET().build(),
                     HttpResponse.BodyHandlers.ofInputStream());
             try (InputStream body = response.body()) {
                 int status = response.statusCode();
@@ -83,17 +93,22 @@ public final class SkinDownloader implements SkinSource {
                     Optional<URI> next = response.headers().firstValue("Location")
                             .flatMap(location -> httpLink(current.resolve(location.trim()).toString()));
                     if (next.isEmpty()) {
-                        return DownloadResult.failed(DownloadFailure.UNREACHABLE);
+                        return unreachable(uri, "HTTP " + status + " redirect to an unusable link");
                     }
                     uri = next.get();
                     continue;
                 }
                 if (status < OK_MIN || status > OK_MAX) {
-                    return DownloadResult.failed(DownloadFailure.UNREACHABLE);
+                    return unreachable(uri, "HTTP " + status);
                 }
                 return checkImage(body.readNBytes(maxBytes + 1));
             }
         }
+        return unreachable(first, "more than " + MAX_REDIRECTS + " redirects");
+    }
+
+    private DownloadResult unreachable(URI uri, String reason) {
+        logger.warning("Could not download a skin from " + uri + ": " + reason);
         return DownloadResult.failed(DownloadFailure.UNREACHABLE);
     }
 
