@@ -13,7 +13,9 @@ import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import org.skysongdev.skysongwardrobe.SkysongWardrobe;
-import org.skysongdev.skysongwardrobe.scheduling.ImmediateTaskRunner;
+import org.skysongdev.skysongwardrobe.items.FakeItemTags;
+import org.skysongdev.skysongwardrobe.items.MainThreadItemTags;
+import org.skysongdev.skysongwardrobe.scheduling.TrackingTaskRunner;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -50,6 +52,7 @@ class SkinRendererTest {
     private TextureCache cache;
     private RenderQueue queue;
     private SkinRenderer renderer;
+    private MainThreadItemTags tags;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -61,12 +64,13 @@ class SkinRendererTest {
         plugin.wardrobes().load(player.getUniqueId()).put("coat", new ItemStack(Material.LEATHER_CHESTPLATE));
 
         cache = TextureCache.load(folder.resolve("texture-cache.yml"));
-        ImmediateTaskRunner tasks = new ImmediateTaskRunner();
+        TrackingTaskRunner tasks = new TrackingTaskRunner();
+        tags = new MainThreadItemTags(tasks, new FakeItemTags());
         SkinApplier applier = new SkinApplier(server, tasks);
         queue = RenderQueue.load(folder.resolve("render-queue.yml"), (skin, arms) -> new SignResult.Signed(SIGNED), cache,
                 () -> Duration.ZERO, Clock.systemUTC(), applier, Logger.getLogger("test"));
         BaseSkins bases = new BaseSkins(cache, uri -> Optional.of(solid(Color.BLUE)), () -> false, Logger.getLogger("test"));
-        OutfitRenderer outfits = new OutfitRenderer(() -> layers, cache, queue,
+        OutfitRenderer outfits = new OutfitRenderer(tags, layers, cache, queue,
                 () -> plugin.configuration().settings().hasMineSkinApiKey());
         renderer = new SkinRenderer(plugin.wardrobes(), plugin.configuration(), bases, outfits, applier,
                 tasks, server, Logger.getLogger("test"));
@@ -88,6 +92,14 @@ class SkinRendererTest {
         queue.runNext();
 
         assertEquals(Optional.of(SIGNED), PlayerSkins.current(player));
+    }
+
+    @Test
+    void itemTagsAreReadOnTheMainThreadBeforeTheAsyncRender() {
+        renderer.render(player);
+
+        assertEquals(1, tags.reads());
+        assertTrue(queue.isWaiting(player.getUniqueId()));
     }
 
     @Test

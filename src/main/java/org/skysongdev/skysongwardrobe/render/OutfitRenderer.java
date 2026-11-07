@@ -1,6 +1,7 @@
 package org.skysongdev.skysongwardrobe.render;
 
 import org.bukkit.inventory.ItemStack;
+import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
@@ -11,8 +12,8 @@ import java.util.function.Supplier;
 
 /**
  * The part of a render every wearer shares: draws the worn layers over a base image, then finds
- * the result in the texture cache or queues it for MineSkin. Reads layer files, so call it off
- * the main thread.
+ * the result in the texture cache or queues it for MineSkin. {@link #read} takes the item tags on
+ * the main thread; {@link #render} reads layer files, so call it off the main thread.
  */
 public final class OutfitRenderer {
     /** How a render ended. */
@@ -30,16 +31,25 @@ public final class OutfitRenderer {
         }
     }
 
-    private final Supplier<LayerResolver> layers;
+    private final Supplier<ItemTagGateway> tags;
+    private final LayerResolver layers;
     private final TextureCache cache;
     private final RenderQueue queue;
     private final BooleanSupplier hasApiKey;
 
-    public OutfitRenderer(Supplier<LayerResolver> layers, TextureCache cache, RenderQueue queue, BooleanSupplier hasApiKey) {
+    /** @param tags looked up per read, since the SkysongItems API is only there once it is ready */
+    public OutfitRenderer(Supplier<ItemTagGateway> tags, LayerResolver layers, TextureCache cache, RenderQueue queue,
+                          BooleanSupplier hasApiKey) {
+        this.tags = tags;
         this.layers = layers;
         this.cache = cache;
         this.queue = queue;
         this.hasApiKey = hasApiKey;
+    }
+
+    /** Reads what the worn items draw, for {@link #render}. Main thread only. Nothing worn needs no tags. */
+    public List<ItemLayers> read(List<ItemStack> worn) {
+        return worn.isEmpty() ? List.of() : ItemLayers.read(tags.get(), worn);
     }
 
     /**
@@ -49,8 +59,8 @@ public final class OutfitRenderer {
      *             worn has a layer; empty when the bare base must be signed too
      */
     public Outcome render(UUID wearer, WearerKind kind, BufferedImage base, ArmModel arms,
-                          Optional<SignedTexture> bare, List<ItemStack> worn) {
-        List<Layer> drawn = layers.get().layers(worn);
+                          Optional<SignedTexture> bare, List<ItemLayers> worn) {
+        List<Layer> drawn = layers.layers(worn);
         if (drawn.isEmpty() && bare.isPresent()) {
             return new Outcome.Ready(bare.get());
         }
