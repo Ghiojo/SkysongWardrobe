@@ -233,8 +233,8 @@ public class SkysongWardrobe extends JavaPlugin {
                 () -> Duration.ofSeconds(configuration.settings().uploadCooldownSeconds()), Clock.systemUTC(),
                 new RenderRouter().route(WearerKind.PLAYER, applier).route(WearerKind.MANNEQUIN, mannequinApplier),
                 getLogger());
-        OutfitRenderer outfits = new OutfitRenderer(
-                () -> new LayerResolver(galleries, itemTags.get(), () -> configuration.settings().verbose(), getLogger()),
+        OutfitRenderer outfits = new OutfitRenderer(itemTags,
+                new LayerResolver(galleries, () -> configuration.settings().verbose(), getLogger()),
                 cache, renderQueue, () -> configuration.settings().hasMineSkinApiKey());
         SkinRenderer renderer = new SkinRenderer(wardrobes, configuration, bases, outfits, applier, tasks,
                 getServer(), getLogger());

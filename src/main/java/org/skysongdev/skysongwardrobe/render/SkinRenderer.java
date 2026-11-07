@@ -2,7 +2,6 @@ package org.skysongdev.skysongwardrobe.render;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.config.WardrobeLayout;
 import org.skysongdev.skysongwardrobe.scheduling.TaskRunner;
@@ -14,8 +13,8 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
- * Draws a player's outfit onto their base skin. The wardrobe and the current texture are read
- * on the main thread; the base download and the {@link OutfitRenderer} run off it. An outfit
+ * Draws a player's outfit onto their base skin. The wardrobe, its items' tags and the current
+ * texture are read on the main thread; the base download and the {@link OutfitRenderer} run off it. An outfit
  * signed before is applied from the cache, a new one is queued for MineSkin, and an empty
  * outfit puts the base skin back.
  */
@@ -49,11 +48,11 @@ public final class SkinRenderer {
         }
         UUID owner = player.getUniqueId();
         Optional<SignedTexture> current = PlayerSkins.current(player);
-        List<ItemStack> worn = wardrobes.load(owner).worn(layout.get());
+        List<ItemLayers> worn = outfits.read(wardrobes.load(owner).worn(layout.get()));
         tasks.async(() -> render(owner, current, worn));
     }
 
-    private void render(UUID owner, Optional<SignedTexture> current, List<ItemStack> worn) {
+    private void render(UUID owner, Optional<SignedTexture> current, List<ItemLayers> worn) {
         Optional<BaseSkin> base = bases.resolve(owner, current);
         if (base.isEmpty()) {
             return;

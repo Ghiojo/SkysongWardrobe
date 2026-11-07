@@ -5,6 +5,7 @@ import org.bukkit.inventory.ItemStack;
 import org.skysongdev.skysongwardrobe.config.MannequinEquipment;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.config.WardrobeLayout;
+import org.skysongdev.skysongwardrobe.render.ItemLayers;
 import org.skysongdev.skysongwardrobe.render.OutfitRenderer;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.scheduling.TaskRunner;
@@ -60,7 +61,7 @@ public final class MannequinRenderer {
                     + ", which is not in mannequin-skins/, so its outfit is not drawn.");
             return;
         }
-        List<ItemStack> worn = wardrobe.worn(layout.get());
+        List<ItemLayers> worn = outfits.read(wardrobe.worn(layout.get()));
         tasks.async(() -> {
             OutfitRenderer.Outcome outcome = outfits.render(id, WearerKind.MANNEQUIN, base.get(), mannequin.get().model(),
                     Optional.empty(), worn);

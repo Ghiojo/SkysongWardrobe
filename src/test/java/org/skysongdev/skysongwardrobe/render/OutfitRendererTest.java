@@ -4,6 +4,8 @@ import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.skysongdev.skysongwardrobe.items.FakeItemTags;
+import org.skysongdev.skysongwardrobe.items.LayerKind;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -28,7 +30,7 @@ class OutfitRendererTest {
     private static final UUID WEARER = UUID.fromString("00000000-0000-0000-0000-00000000000a");
     private static final SignedTexture BARE = new SignedTexture("bare", "bare-sig");
     private static final SignedTexture SIGNED = new SignedTexture("outfit", "outfit-sig");
-    private static final List<ItemStack> WORN = List.of();
+    private static final List<ItemLayers> WORN = List.of();
 
     @TempDir
     Path folder;
@@ -36,6 +38,7 @@ class OutfitRendererTest {
     private final LayerResolver layers = mock(LayerResolver.class);
     private TextureCache cache;
     private RenderQueue queue;
+    private final FakeItemTags tags = new FakeItemTags();
     private boolean hasKey = true;
     private OutfitRenderer outfits;
 
@@ -44,7 +47,7 @@ class OutfitRendererTest {
         cache = TextureCache.load(folder.resolve("texture-cache.yml"));
         queue = RenderQueue.load(folder.resolve("render-queue.yml"), (skin, arms) -> new SignResult.Signed(SIGNED),
                 cache, () -> Duration.ZERO, Clock.systemUTC(), new RenderRouter(), Logger.getLogger("test"));
-        outfits = new OutfitRenderer(() -> layers, cache, queue, () -> hasKey);
+        outfits = new OutfitRenderer(() -> tags, layers, cache, queue, () -> hasKey);
         when(layers.layers(anyList())).thenReturn(List.of(Layer.untinted(solid(Color.RED))));
     }
 
@@ -87,6 +90,23 @@ class OutfitRendererTest {
 
         assertInstanceOf(OutfitRenderer.Outcome.NoApiKey.class, render(Optional.of(BARE)));
         assertTrue(queue.waiting().isEmpty());
+    }
+
+    @Test
+    void readingNothingWornNeedsNoItemTags() {
+        OutfitRenderer withoutTags = new OutfitRenderer(() -> {
+            throw new IllegalStateException("SkysongItems is not enabled");
+        }, layers, cache, queue, () -> hasKey);
+
+        assertEquals(List.of(), withoutTags.read(List.of()));
+    }
+
+    @Test
+    void readTakesEachWornItemsLayerTags() {
+        tags.setLayer(null, null, LayerKind.REGULAR, "owner:cape");
+
+        assertEquals(List.of(new ItemLayers(Optional.empty(), org.bukkit.Color.WHITE, Optional.of("owner:cape"))),
+                outfits.read(List.of(mock(ItemStack.class))));
     }
 
     private OutfitRenderer.Outcome render(Optional<SignedTexture> bare) {

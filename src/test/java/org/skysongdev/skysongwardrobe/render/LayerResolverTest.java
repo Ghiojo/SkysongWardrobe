@@ -2,8 +2,6 @@ package org.skysongdev.skysongwardrobe.render;
 
 import org.bukkit.Color;
 import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -12,7 +10,6 @@ import org.skysongdev.skysongwardrobe.gallery.GalleryRepository;
 import org.skysongdev.skysongwardrobe.gallery.PlayerGallery;
 import org.skysongdev.skysongwardrobe.gallery.SkinEntry;
 import org.skysongdev.skysongwardrobe.gallery.SkinId;
-import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
 import org.skysongdev.skysongwardrobe.items.LayerKind;
 
 import javax.imageio.ImageIO;
@@ -24,7 +21,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,7 +31,6 @@ import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
 
 class LayerResolverTest {
     private static final UUID OWNER = UUID.randomUUID();
@@ -45,7 +40,6 @@ class LayerResolverTest {
     Path root;
     private GalleryRepository galleries;
     private PlayerGallery gallery;
-    private final Map<ItemStack, Map<LayerKind, String>> layers = new HashMap<>();
     private final List<String> logged = new ArrayList<>();
     private boolean verbose;
     private LayerResolver resolver;
@@ -75,12 +69,12 @@ class LayerResolverTest {
         add("cape", 64);
         add("trim", 64);
         add("small", 32);
-        resolver = new LayerResolver(galleries, tags(), () -> verbose, logger);
+        resolver = new LayerResolver(galleries, () -> verbose, logger);
     }
 
     @Test
     void dyableLayerComesFirstTintedThenTheRegularOne() {
-        ItemStack coat = item(Map.of(LayerKind.REGULAR, ref("cape"), LayerKind.DYABLE, ref("trim")));
+        ItemLayers coat = item(Map.of(LayerKind.REGULAR, ref("cape"), LayerKind.DYABLE, ref("trim")));
 
         List<Layer> result = resolver.layers(List.of(coat));
 
@@ -91,8 +85,8 @@ class LayerResolverTest {
 
     @Test
     void itemsKeepTheirOrder() {
-        ItemStack boots = item(Map.of(LayerKind.REGULAR, ref("trim")));
-        ItemStack coat = item(Map.of(LayerKind.REGULAR, ref("cape")));
+        ItemLayers boots = item(Map.of(LayerKind.REGULAR, ref("trim")));
+        ItemLayers coat = item(Map.of(LayerKind.REGULAR, ref("cape")));
 
         List<Layer> result = resolver.layers(List.of(boots, coat));
 
@@ -109,9 +103,9 @@ class LayerResolverTest {
 
     @Test
     void brokenLayersAreSkippedQuietlyUnlessVerbose() {
-        ItemStack broken = item(Map.of(LayerKind.REGULAR, ref("missing"), LayerKind.DYABLE, "not a reference"));
-        ItemStack small = item(Map.of(LayerKind.REGULAR, ref("small")));
-        ItemStack stranger = item(Map.of(LayerKind.REGULAR, UUID.randomUUID() + ":cape"));
+        ItemLayers broken = item(Map.of(LayerKind.REGULAR, ref("missing"), LayerKind.DYABLE, "not a reference"));
+        ItemLayers small = item(Map.of(LayerKind.REGULAR, ref("small")));
+        ItemLayers stranger = item(Map.of(LayerKind.REGULAR, UUID.randomUUID() + ":cape"));
 
         assertTrue(resolver.layers(List.of(broken, small, stranger)).isEmpty());
         assertTrue(logged.isEmpty());
@@ -131,56 +125,12 @@ class LayerResolverTest {
         assertTrue(Files.isRegularFile(gallery.imageFile(new SkinId(id))));
     }
 
-    private ItemStack item(Map<LayerKind, String> values) {
-        ItemStack item = mock(ItemStack.class);
-        layers.put(item, values);
-        return item;
+    private static ItemLayers item(Map<LayerKind, String> values) {
+        return new ItemLayers(Optional.ofNullable(values.get(LayerKind.DYABLE)), RED,
+                Optional.ofNullable(values.get(LayerKind.REGULAR)));
     }
 
     private static String ref(String id) {
         return OWNER + ":" + id;
-    }
-
-    private ItemTagGateway tags() {
-        return new ItemTagGateway() {
-            @Override
-            public boolean isSkysongItem(ItemStack item) {
-                return true;
-            }
-
-            @Override
-            public Optional<String> layer(ItemStack item, LayerKind kind) {
-                return Optional.ofNullable(layers.get(item).get(kind));
-            }
-
-            @Override
-            public Optional<String> type(ItemStack item) {
-                return Optional.empty();
-            }
-
-            @Override
-            public Optional<String> mannequinSkin(ItemStack item) {
-                return Optional.empty();
-            }
-
-            @Override
-            public Optional<String> mannequinModel(ItemStack item) {
-                return Optional.empty();
-            }
-
-            @Override
-            public Color dyeColor(ItemStack item) {
-                return RED;
-            }
-
-            @Override
-            public void setLayer(Player player, ItemStack item, LayerKind kind, String value) {
-            }
-
-            @Override
-            public boolean removeLayer(Player player, ItemStack item, LayerKind kind) {
-                return false;
-            }
-        };
     }
 }

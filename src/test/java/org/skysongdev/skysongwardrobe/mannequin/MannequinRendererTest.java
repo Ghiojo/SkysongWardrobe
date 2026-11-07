@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockbukkit.mockbukkit.MockBukkit;
 import org.skysongdev.skysongwardrobe.SkysongWardrobe;
+import org.skysongdev.skysongwardrobe.items.FakeItemTags;
+import org.skysongdev.skysongwardrobe.items.MainThreadItemTags;
 import org.skysongdev.skysongwardrobe.render.ArmModel;
 import org.skysongdev.skysongwardrobe.render.Layer;
 import org.skysongdev.skysongwardrobe.render.LayerResolver;
@@ -20,7 +22,7 @@ import org.skysongdev.skysongwardrobe.render.SignResult;
 import org.skysongdev.skysongwardrobe.render.SignedTexture;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
-import org.skysongdev.skysongwardrobe.scheduling.ImmediateTaskRunner;
+import org.skysongdev.skysongwardrobe.scheduling.TrackingTaskRunner;
 import org.skysongdev.skysongwardrobe.wardrobe.Wardrobe;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
@@ -58,6 +60,7 @@ class MannequinRendererTest {
     private RenderQueue queue;
     private MannequinRenderer renderer;
     private Mannequin mannequin;
+    private MainThreadItemTags tags;
 
     @BeforeEach
     void setUp() throws IOException {
@@ -74,9 +77,11 @@ class MannequinRendererTest {
         TextureCache cache = TextureCache.load(folder.resolve("texture-cache.yml"));
         queue = RenderQueue.load(folder.resolve("render-queue.yml"), (skin, arms) -> new SignResult.Signed(SIGNED), cache,
                 () -> Duration.ZERO, Clock.systemUTC(), new RenderRouter(), Logger.getAnonymousLogger());
-        OutfitRenderer outfits = new OutfitRenderer(() -> layers, cache, queue, () -> true);
+        TrackingTaskRunner tasks = new TrackingTaskRunner();
+        tags = new MainThreadItemTags(tasks, new FakeItemTags());
+        OutfitRenderer outfits = new OutfitRenderer(tags, layers, cache, queue, () -> true);
         renderer = new MannequinRenderer(mannequins, wardrobes, plugin.configuration(), outfits, bodies,
-                new ImmediateTaskRunner(), Logger.getAnonymousLogger());
+                tasks, Logger.getAnonymousLogger());
         when(layers.layers(anyList())).thenReturn(List.of());
 
         mannequin = new Mannequin(UUID.randomUUID(), UUID.randomUUID(), new ItemStack(Material.ARMOR_STAND), "oak",
@@ -98,6 +103,16 @@ class MannequinRendererTest {
         assertEquals(mannequin.id(), job.wearer());
         assertEquals(WearerKind.MANNEQUIN, job.kind());
         assertEquals(ArmModel.SLIM, job.armModel());
+    }
+
+    @Test
+    void itemTagsAreReadOnTheMainThreadBeforeTheAsyncRender() {
+        wardrobes.load(mannequin.id()).put("coat", new ItemStack(Material.LEATHER_CHESTPLATE));
+
+        renderer.render(mannequin.id());
+
+        assertEquals(1, tags.reads());
+        assertTrue(queue.isWaiting(mannequin.id()));
     }
 
     @Test
