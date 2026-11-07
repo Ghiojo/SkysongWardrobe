@@ -75,3 +75,7 @@ unapply:
 reload:
   done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."
   layout-broken: "<prefix> <red>Reloaded, but wardrobe.yml has errors, so the wardrobe stays closed. The console lists them."
+
+render:
+  # Sent when a new outfit waits for MineSkin to sign it.
+  queued: "<prefix> <gray>Your new look is being prepared and will appear shortly."
