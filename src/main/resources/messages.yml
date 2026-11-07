@@ -55,6 +55,9 @@ wardrobe:
     no-free-slot: "<prefix> <red>There is no free slot for that item."
   inventory-full: "<prefix> <red>Your inventory is full."
   save-error: "<prefix> <red>Could not save the wardrobe. Please tell staff."
+  closed: "<prefix> <red>The wardrobe is closed until staff fix wardrobe.yml."
+  # Placeholders: <player>
+  unknown-player: "<prefix> <red>No player called <white><player></white> has played here."
 
 reload:
   done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."

@@ -8,6 +8,7 @@ import org.skysongdev.skysongwardrobe.commands.EditCommand;
 import org.skysongdev.skysongwardrobe.commands.GalleryCommand;
 import org.skysongdev.skysongwardrobe.commands.ReloadCommand;
 import org.skysongdev.skysongwardrobe.commands.UploadCommand;
+import org.skysongdev.skysongwardrobe.commands.WardrobeCommand;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommands;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.config.WardrobeSettings;
@@ -19,10 +20,14 @@ import org.skysongdev.skysongwardrobe.gallery.GalleryFolders;
 import org.skysongdev.skysongwardrobe.gallery.GalleryRepository;
 import org.skysongdev.skysongwardrobe.gallery.MojangNameLookup;
 import org.skysongdev.skysongwardrobe.gallery.SkinUploader;
+import org.skysongdev.skysongwardrobe.items.SkysongItemsTagGateway;
 import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
 import org.skysongdev.skysongwardrobe.menu.MenuListener;
 import org.skysongdev.skysongwardrobe.prompt.DialogConfirmationPrompt;
 import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenuListener;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeSessionListener;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -42,6 +47,7 @@ public class SkysongWardrobe extends JavaPlugin {
     private PluginConfiguration configuration;
     private GalleryFolders galleryFolders;
     private GalleryRepository galleries;
+    private WardrobeRepository wardrobes;
 
     @Override
     public void onEnable() {
@@ -73,7 +79,16 @@ public class SkysongWardrobe extends JavaPlugin {
                 new DeleteCommand(galleries, archive, configuration, getLogger()),
                 new GalleryCommand(galleries, configuration, getServer())));
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
-        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> commands.register(event.registrar()));
+        wardrobes = new WardrobeRepository(getDataFolder().toPath().resolve("wardrobes"), getLogger());
+        WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes,
+                () -> new SkysongItemsTagGateway(SkysongItemsApi.get()), configuration, getServer());
+        getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobes, configuration, getServer(), getLogger()), this);
+        getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer()), this);
+
+        getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
+            commands.register(event.registrar());
+            wardrobeCommand.register(event.registrar());
+        });
     }
 
     /** Built per upload, so a reload's new size limit and timeout apply at once. */
@@ -94,6 +109,11 @@ public class SkysongWardrobe extends JavaPlugin {
     /** Where each player's gallery folder is. */
     public GalleryFolders galleryFolders() {
         return galleryFolders;
+    }
+
+    /** One loaded wardrobe per player. */
+    public WardrobeRepository wardrobes() {
+        return wardrobes;
     }
 
     /** One loaded gallery per player. */

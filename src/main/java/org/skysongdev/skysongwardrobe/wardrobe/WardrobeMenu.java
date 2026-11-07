@@ -5,6 +5,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.skysongdev.skysongwardrobe.config.SlotDefinition;
 import org.skysongdev.skysongwardrobe.config.WardrobeLayout;
@@ -44,6 +45,12 @@ public final class WardrobeMenu implements InventoryHolder {
         this.tags = tags;
         this.inventory = Bukkit.createInventory(this, WardrobeLayout.SIZE, MiniMessage.miniMessage().deserialize(layout.title()));
         draw();
+    }
+
+    /** The wardrobe menu a player is looking at, if any. */
+    public static Optional<WardrobeMenu> of(InventoryView view) {
+        Inventory top = view == null ? null : view.getTopInventory();
+        return top != null && top.getHolder(false) instanceof WardrobeMenu menu ? Optional.of(menu) : Optional.empty();
     }
 
     public Wardrobe wardrobe() {
