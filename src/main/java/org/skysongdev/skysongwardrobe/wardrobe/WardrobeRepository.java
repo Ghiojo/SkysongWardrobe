@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
@@ -44,6 +45,23 @@ public final class WardrobeRepository {
                 file.set(SLOTS + "." + slot, Base64.getEncoder().encodeToString(item.serializeAsBytes())));
         Files.createDirectories(folder);
         file.save(file(wardrobe.owner()).toFile());
+    }
+
+    /**
+     * Deletes the owner's wardrobe, for a broken mannequin whose items were given back. If the
+     * file still holds items that couldn't be read, it is renamed to {@code <uuid>.broken.yml}
+     * instead, so they are never lost.
+     */
+    public synchronized void delete(UUID owner) throws IOException {
+        Path path = file(owner);
+        if (unreadable.containsKey(owner) && Files.isRegularFile(path)) {
+            Files.move(path, folder.resolve(owner + ".broken.yml"), StandardCopyOption.REPLACE_EXISTING);
+            logger.warning(path + " held items that can't be read, so it was kept as " + owner + ".broken.yml.");
+        } else {
+            Files.deleteIfExists(path);
+        }
+        loaded.remove(owner);
+        unreadable.remove(owner);
     }
 
     /** Forgets the cached copy, for an owner who left; the next load reads the file again. */
