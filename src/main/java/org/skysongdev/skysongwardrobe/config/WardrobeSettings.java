@@ -13,6 +13,7 @@ import java.util.Objects;
  * @param applyPermissions        holding any one of these grants /sw apply and /sw unapply
  * @param uploadCooldownSeconds   the shortest time between two MineSkin uploads for one player
  * @param mineSkinApiKey          the MineSkin API key, empty when none is set
+ * @param skinVisibility          who may find the skins uploaded to MineSkin
  * @param mannequins              who may place mannequins, and how many
  */
 public record WardrobeSettings(boolean verbose,
@@ -22,12 +23,14 @@ public record WardrobeSettings(boolean verbose,
                                List<String> applyPermissions,
                                int uploadCooldownSeconds,
                                String mineSkinApiKey,
+                               SkinVisibility skinVisibility,
                                MannequinSettings mannequins) {
 
     public WardrobeSettings {
         galleryPermissions = List.copyOf(galleryPermissions);
         applyPermissions = List.copyOf(applyPermissions);
         Objects.requireNonNull(mineSkinApiKey, "mineSkinApiKey");
+        Objects.requireNonNull(skinVisibility, "skinVisibility");
         Objects.requireNonNull(mannequins, "mannequins");
     }
 

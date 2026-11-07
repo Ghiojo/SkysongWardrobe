@@ -32,6 +32,7 @@ class SettingsParserTest {
         assertEquals(30, settings.uploadCooldownSeconds());
         assertEquals("", settings.mineSkinApiKey());
         assertFalse(settings.hasMineSkinApiKey());
+        assertEquals(SkinVisibility.UNLISTED, settings.skinVisibility());
         assertEquals(new MannequinSettings(List.of("skysongwardrobe.mannequin"), 0, 15), settings.mannequins());
         assertTrue(parser.warnings().isEmpty());
     }
@@ -50,6 +51,7 @@ class SettingsParserTest {
                   upload-cooldown-seconds: 0
                 mineskin:
                   api-key: " abc123 "
+                  visibility: Private
                 mannequins:
                   permissions: [skysongstats.carpenter]
                   max-per-player: 3
@@ -64,6 +66,7 @@ class SettingsParserTest {
         assertEquals(0, settings.uploadCooldownSeconds());
         assertEquals("abc123", settings.mineSkinApiKey());
         assertTrue(settings.hasMineSkinApiKey());
+        assertEquals(SkinVisibility.PRIVATE, settings.skinVisibility());
         assertEquals(new MannequinSettings(List.of("skysongstats.carpenter"), 3, 0), settings.mannequins());
         assertTrue(parser.warnings().isEmpty());
     }
@@ -111,6 +114,17 @@ class SettingsParserTest {
         assertEquals(15, settings.mannequins().perChunk());
         assertEquals(2, parser.warnings().size());
         assertTrue(parser.warnings().get(1).startsWith("mannequins.max-per-chunk"));
+    }
+
+    @Test
+    void publicOrUnknownVisibilityFallsBackToUnlistedWithAWarning() throws InvalidConfigurationException {
+        for (String value : List.of("public", "secret")) {
+            WardrobeSettings settings = parser.parse(yaml("mineskin: {visibility: " + value + "}"));
+
+            assertEquals(SkinVisibility.UNLISTED, settings.skinVisibility());
+            assertEquals(List.of("mineskin.visibility must be unlisted or private, so it uses unlisted."),
+                    parser.warnings());
+        }
     }
 
     @Test

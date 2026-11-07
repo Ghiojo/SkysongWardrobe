@@ -4,6 +4,7 @@ import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Turns config.yml into {@link WardrobeSettings}. A missing or invalid value falls back to
@@ -18,6 +19,7 @@ public final class SettingsParser {
     static final String DEFAULT_MANNEQUIN_PERMISSION = "skysongwardrobe.mannequin";
     static final int DEFAULT_MANNEQUINS_PER_PLAYER = 0;
     static final int DEFAULT_MANNEQUINS_PER_CHUNK = 15;
+    static final SkinVisibility DEFAULT_SKIN_VISIBILITY = SkinVisibility.UNLISTED;
 
     private final List<String> warnings = new ArrayList<>();
 
@@ -32,6 +34,7 @@ public final class SettingsParser {
                 permissions(config, "apply.permissions", DEFAULT_APPLY_PERMISSION),
                 nonNegativeInt(config, "render.upload-cooldown-seconds", DEFAULT_UPLOAD_COOLDOWN_SECONDS),
                 config.getString("mineskin.api-key", "").trim(),
+                visibility(config, "mineskin.visibility"),
                 new MannequinSettings(
                         permissions(config, "mannequins.permissions", DEFAULT_MANNEQUIN_PERMISSION),
                         nonNegativeInt(config, "mannequins.max-per-player", DEFAULT_MANNEQUINS_PER_PLAYER),
@@ -56,6 +59,18 @@ public final class SettingsParser {
             return List.of(fallback);
         }
         return values;
+    }
+
+    private SkinVisibility visibility(ConfigurationSection config, String path) {
+        if (!config.contains(path)) {
+            return DEFAULT_SKIN_VISIBILITY;
+        }
+        Optional<SkinVisibility> named = SkinVisibility.named(String.valueOf(config.get(path)));
+        if (named.isEmpty()) {
+            warnings.add(path + " must be unlisted or private, so it uses unlisted.");
+            return DEFAULT_SKIN_VISIBILITY;
+        }
+        return named.get();
     }
 
     private int positiveInt(ConfigurationSection config, String path, int fallback) {

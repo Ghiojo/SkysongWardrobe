@@ -228,7 +228,8 @@ public class SkysongWardrobe extends JavaPlugin {
         MannequinSkinApplier mannequinApplier = new MannequinSkinApplier(mannequinBodies, tasks);
         getServer().getPluginManager().registerEvents(mannequinApplier, this);
         ConfiguredSigner signer = new ConfiguredSigner(() -> configuration.settings().mineSkinApiKey(),
-                key -> new MineSkinSigner(MineSkinSigner.client(key), DEFAULT_RATE_LIMIT_WAIT));
+                key -> new MineSkinSigner(MineSkinSigner.client(key), DEFAULT_RATE_LIMIT_WAIT,
+                        () -> configuration.settings().skinVisibility()));
         renderQueue = RenderQueue.load(getDataFolder().toPath().resolve("render-queue.yml"), signer, cache,
                 () -> Duration.ofSeconds(configuration.settings().uploadCooldownSeconds()), Clock.systemUTC(),
                 new RenderRouter().route(WearerKind.PLAYER, applier).route(WearerKind.MANNEQUIN, mannequinApplier),

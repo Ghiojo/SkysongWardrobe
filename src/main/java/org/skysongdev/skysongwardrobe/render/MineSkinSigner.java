@@ -11,16 +11,18 @@ import org.mineskin.exception.MineSkinRequestException;
 import org.mineskin.request.GenerateRequest;
 import org.mineskin.response.GenerateResponse;
 import org.mineskin.response.MineSkinResponse;
+import org.skysongdev.skysongwardrobe.config.SkinVisibility;
 
 import java.awt.image.BufferedImage;
 import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Supplier;
 
 /**
- * {@link SkinSigner} over MineSkin's official Java client. Uploads are private, so the
- * players' skins never appear in MineSkin's gallery or search; only the server uses them.
+ * {@link SkinSigner} over MineSkin's official Java client. Uploads are unlisted or private, as
+ * config.yml says, so the players' skins never appear in MineSkin's gallery or search.
  */
 public final class MineSkinSigner implements SkinSigner {
     private static final int TOO_MANY_REQUESTS = 429;
@@ -28,14 +30,17 @@ public final class MineSkinSigner implements SkinSigner {
 
     private final MineSkinClient client;
     private final Duration defaultRetry;
+    private final Supplier<SkinVisibility> visibility;
 
     /**
      * @param client       the MineSkin client to upload through
      * @param defaultRetry how long to wait after a rate-limit answer that doesn't say how long
+     * @param visibility   the visibility config.yml sets right now, read on every upload
      */
-    public MineSkinSigner(MineSkinClient client, Duration defaultRetry) {
+    public MineSkinSigner(MineSkinClient client, Duration defaultRetry, Supplier<SkinVisibility> visibility) {
         this.client = client;
         this.defaultRetry = defaultRetry;
+        this.visibility = visibility;
     }
 
     /** A client for the given API key, built the way the plugin uses it. */
@@ -51,7 +56,7 @@ public final class MineSkinSigner implements SkinSigner {
     public SignResult sign(BufferedImage skin, ArmModel armModel) {
         GenerateRequest request = GenerateRequest.upload(skin)
                 .variant(variant(armModel))
-                .visibility(Visibility.PRIVATE)
+                .visibility(visibility(visibility.get()))
                 .name(USER_AGENT);
         try {
             return signed(client.generate().submitAndWait(request).get());
@@ -63,6 +68,10 @@ public final class MineSkinSigner implements SkinSigner {
         } catch (RuntimeException failed) {
             return failure(failed);
         }
+    }
+
+    static Visibility visibility(SkinVisibility visibility) {
+        return visibility == SkinVisibility.PRIVATE ? Visibility.PRIVATE : Visibility.UNLISTED;
     }
 
     static Variant variant(ArmModel armModel) {

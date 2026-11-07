@@ -167,8 +167,8 @@ bypass may always.
 
 Run `/sw reload` after editing any of these files.
 
-- `config.yml`: permissions, download limits, the upload cooldown, mannequin limits and
-  the MineSkin API key.
+- `config.yml`: permissions, download limits, the upload cooldown, mannequin limits, the
+  MineSkin API key and skin visibility.
   Turn on `verbose` to log silent failures, such as a worn item whose skin file is missing.
 - `wardrobe.yml`: the wardrobe and gallery menus. Each wardrobe slot has a `position`
   (0 to 53), the `wardrobe_type` values it `accepts`, and a `priority`; higher priorities
@@ -199,9 +199,10 @@ still works, but new looks are not shown to players.
 2. Create an API key there.
 3. Put it in `config.yml` under `mineskin.api-key`, then run `/sw reload`.
 
-Skins are uploaded to MineSkin as **private**, so they never show up in MineSkin's public
-gallery or search, and only this server uses them. If uploads fail with a message about
-private skins, check that your MineSkin account allows private skins.
+Skins are uploaded to MineSkin as **unlisted** by default, so they never show up in
+MineSkin's public gallery or search. Set `mineskin.visibility: private` to also hide them
+from anyone who has the link, if your MineSkin plan allows private skins; otherwise uploads
+fail with "you are not allowed to generate private skins". Skins are never uploaded as public.
 
 Keep the key private. If MineSkin asks the plugin to slow down, uploads pause and resume
 by themselves. `render.upload-cooldown-seconds` sets the shortest time between two
