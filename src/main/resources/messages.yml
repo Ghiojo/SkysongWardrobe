@@ -88,3 +88,5 @@ mannequin:
   player-limit: "<prefix> <red>You have placed as many mannequins as you can."
   chunk-limit: "<prefix> <red>There are too many mannequins around here."
   save-error: "<prefix> <red>Could not save the mannequin. Please tell staff."
+  no-access: "<prefix> <red>This mannequin isn't yours."
+  in-use: "<prefix> <red>Someone else is dressing this mannequin right now."
