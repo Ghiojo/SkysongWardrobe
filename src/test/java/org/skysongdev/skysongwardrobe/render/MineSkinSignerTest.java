@@ -12,10 +12,12 @@ import org.mineskin.data.RateLimitInfo;
 import org.mineskin.data.SkinInfo;
 import org.mineskin.data.ValueAndSignature;
 import org.mineskin.data.Variant;
+import org.mineskin.data.Visibility;
 import org.mineskin.exception.MineSkinRequestException;
 import org.mineskin.request.GenerateRequest;
 import org.mineskin.response.GenerateResponse;
 import org.mockito.ArgumentCaptor;
+import org.skysongdev.skysongwardrobe.config.SkinVisibility;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -26,9 +28,11 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -39,12 +43,13 @@ class MineSkinSignerTest {
 
     private final GenerateClient generate = mock(GenerateClient.class);
     private MineSkinSigner signer;
+    private SkinVisibility visibility = SkinVisibility.UNLISTED;
 
     @BeforeEach
     void setUp() {
         MineSkinClient client = mock(MineSkinClient.class);
         when(client.generate()).thenReturn(generate);
-        signer = new MineSkinSigner(client, DEFAULT_RETRY);
+        signer = new MineSkinSigner(client, DEFAULT_RETRY, () -> visibility);
     }
 
     @Test
@@ -65,7 +70,35 @@ class MineSkinSignerTest {
         ArgumentCaptor<GenerateRequest> request = ArgumentCaptor.forClass(GenerateRequest.class);
         verify(generate).submitAndWait(request.capture());
         assertEquals("slim", sentOptions(request.getValue()).get("variant").getAsString());
-        assertEquals("private", sentOptions(request.getValue()).get("visibility").getAsString());
+    }
+
+    @Test
+    void uploadsUnlistedByDefault() {
+        assertEquals("unlisted", sentVisibility());
+    }
+
+    @Test
+    void uploadsPrivateWhenTheConfigSaysSoWithoutARestart() {
+        sentVisibility();
+        visibility = SkinVisibility.PRIVATE;
+
+        assertEquals("private", sentVisibility());
+    }
+
+    @Test
+    void neverUploadsPublic() {
+        for (SkinVisibility each : SkinVisibility.values()) {
+            assertNotEquals(Visibility.PUBLIC, MineSkinSigner.visibility(each));
+        }
+    }
+
+    private String sentVisibility() {
+        clearInvocations(generate);
+        answer(CompletableFuture.completedFuture(response(new ValueAndSignature("value", "signature"))));
+        signer.sign(SKIN, ArmModel.CLASSIC);
+        ArgumentCaptor<GenerateRequest> request = ArgumentCaptor.forClass(GenerateRequest.class);
+        verify(generate).submitAndWait(request.capture());
+        return sentOptions(request.getValue()).get("visibility").getAsString();
     }
 
     @Test
