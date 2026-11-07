@@ -41,6 +41,7 @@ import org.skysongdev.skysongwardrobe.mannequin.MannequinSkinApplier;
 import org.skysongdev.skysongwardrobe.mannequin.OrphanMannequinListener;
 import org.skysongdev.skysongwardrobe.mannequin.OwnerAccess;
 import org.skysongdev.skysongwardrobe.mannequin.PaperMannequinBodies;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinSpawnGuard;
 import org.skysongdev.skysongwardrobe.mannequin.PaperMannequinSpawner;
 import org.skysongdev.skysongwardrobe.menu.MenuListener;
 import org.skysongdev.skysongwardrobe.prompt.DialogConfirmationPrompt;
@@ -189,7 +190,9 @@ public class SkysongWardrobe extends JavaPlugin {
         MannequinRenderer renderer = new MannequinRenderer(mannequins, mannequinWardrobes, configuration, outfits,
                 mannequinBodies, new BukkitTaskRunner(this), getLogger());
         MannequinAccess access = mannequinAccess();
-        MannequinPlacer placer = new MannequinPlacer(mannequins, mannequinMarker, new PaperMannequinSpawner(), access,
+        MannequinSpawnGuard spawnGuard = new MannequinSpawnGuard();
+        getServer().getPluginManager().registerEvents(spawnGuard, this);
+        MannequinPlacer placer = new MannequinPlacer(mannequins, mannequinMarker, new PaperMannequinSpawner(spawnGuard), access,
                 itemTags, configuration, mannequin -> renderer.render(mannequin.id()), getLogger());
         getServer().getPluginManager().registerEvents(new MannequinPlaceListener(placer, configuration::messages), this);
         getServer().getPluginManager().registerEvents(new MannequinRenderTrigger(renderer), this);

@@ -93,6 +93,10 @@ public final class MannequinPlacer {
         Location location = feet.getLocation().add(0.5, 0, 0.5);
         location.setYaw(facing(player.getLocation().getYaw()));
         LivingEntity entity = spawner.spawn(location, model);
+        if (!entity.isValid()) {
+            // Another plugin cancelled the spawn.
+            return Result.NO_ACCESS_HERE;
+        }
         marker.mark(entity);
         Mannequin mannequin = new Mannequin(entity.getUniqueId(), player.getUniqueId(), item, skin, model);
         try {
