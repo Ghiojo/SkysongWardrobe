@@ -7,5 +7,6 @@ description: Wear SkysongItems items in a wardrobe that draws their layers onto 
 
 # Every item tag the wardrobe reads lives in SkysongItems, so it must enable first.
 depend: [Skysong_Items]
-# Optional: worn items count towards stats when SkysongStats is installed.
-softdepend: [SkysongStats]
+# Optional: worn items count towards stats when SkysongStats is installed, and
+# WorldGuard regions decide who may place, use and break mannequins.
+softdepend: [SkysongStats, WorldGuard]

@@ -1,10 +1,13 @@
 package org.skysongdev.skysongwardrobe.mannequin;
 
+import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-/** Who may open a mannequin's wardrobe and break it. */
+/** Who may place mannequins somewhere, and open or break a placed one. */
 public interface MannequinAccess {
-    boolean canUse(Player player, Mannequin mannequin);
+    boolean canPlace(Player player, Location location);
 
-    boolean canBreak(Player player, Mannequin mannequin);
+    boolean canUse(Player player, Mannequin mannequin, Location location);
+
+    boolean canBreak(Player player, Mannequin mannequin, Location location);
 }

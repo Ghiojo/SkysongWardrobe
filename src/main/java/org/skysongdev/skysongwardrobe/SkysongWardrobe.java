@@ -60,6 +60,8 @@ import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
 import org.skysongdev.skysongwardrobe.stats.SkysongStatsHook;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenuListener;
+import org.skysongdev.skysongwardrobe.worldguard.RegionAccess;
+import org.skysongdev.skysongwardrobe.worldguard.WorldGuardRegionRules;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeSessionListener;
 
@@ -84,6 +86,7 @@ public class SkysongWardrobe extends JavaPlugin {
     /** How often the render queue checks for a job it may upload: once a second. */
     private static final long QUEUE_PERIOD_TICKS = 20;
     private static final String SKYSONG_STATS = "SkysongStats";
+    private static final String WORLD_GUARD = "WorldGuard";
 
     private PluginConfiguration configuration;
     private GalleryFolders galleryFolders;
@@ -94,6 +97,22 @@ public class SkysongWardrobe extends JavaPlugin {
     private WardrobeRepository mannequinWardrobes;
     private MannequinMarker mannequinMarker;
     private MannequinBodies mannequinBodies;
+    private boolean worldGuardFlags;
+
+    /** WorldGuard is optional; its flags must be registered before it enables, so here. */
+    @Override
+    public void onLoad() {
+        if (getServer().getPluginManager().getPlugin(WORLD_GUARD) == null) {
+            return;
+        }
+        try {
+            WorldGuardRegionRules.registerFlags(getLogger());
+            worldGuardFlags = true;
+        } catch (RuntimeException | LinkageError failed) {
+            getLogger().log(Level.WARNING, "Could not add the mannequin flags to WorldGuard; only owners and staff"
+                    + " may use mannequins.", failed);
+        }
+    }
 
     @Override
     public void onEnable() {
@@ -144,6 +163,16 @@ public class SkysongWardrobe extends JavaPlugin {
         });
     }
 
+    /** Owner and staff only, or WorldGuard's region flags first when WorldGuard is installed. */
+    private MannequinAccess mannequinAccess() {
+        MannequinAccess owners = new OwnerAccess(() -> configuration.settings().mannequins());
+        if (!worldGuardFlags) {
+            return owners;
+        }
+        getLogger().info("WorldGuard regions now decide who may place, use and break mannequins.");
+        return new RegionAccess(new WorldGuardRegionRules(), owners, () -> configuration.settings().mannequins());
+    }
+
     /** Reads every placed mannequin and their wardrobes, and clears out mannequins broken earlier. */
     private void loadMannequins() {
         mannequins = MannequinRepository.load(getDataFolder().toPath().resolve("mannequins"), getLogger());
@@ -158,11 +187,11 @@ public class SkysongWardrobe extends JavaPlugin {
     private void startMannequins(Supplier<ItemTagGateway> itemTags, OutfitRenderer outfits) {
         MannequinRenderer renderer = new MannequinRenderer(mannequins, mannequinWardrobes, configuration, outfits,
                 mannequinBodies, new BukkitTaskRunner(this), getLogger());
-        MannequinPlacer placer = new MannequinPlacer(mannequins, mannequinMarker, new PaperMannequinSpawner(), itemTags,
-                configuration, mannequin -> renderer.render(mannequin.id()), getLogger());
+        MannequinAccess access = mannequinAccess();
+        MannequinPlacer placer = new MannequinPlacer(mannequins, mannequinMarker, new PaperMannequinSpawner(), access,
+                itemTags, configuration, mannequin -> renderer.render(mannequin.id()), getLogger());
         getServer().getPluginManager().registerEvents(new MannequinPlaceListener(placer, configuration::messages), this);
         getServer().getPluginManager().registerEvents(new MannequinRenderTrigger(renderer), this);
-        MannequinAccess access = new OwnerAccess(() -> configuration.settings().mannequins());
         getServer().getPluginManager().registerEvents(new MannequinInteractListener(mannequins, mannequinWardrobes,
                 mannequinMarker, access, itemTags, configuration, getServer()), this);
         MannequinBreaker breaker = new MannequinBreaker(mannequins, mannequinWardrobes, access, renderQueue, getServer(),
