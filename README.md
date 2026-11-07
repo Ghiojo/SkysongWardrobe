@@ -8,7 +8,8 @@ Each worn item can carry skin layers, which are drawn over the player's own skin
 - Paper 1.21.11 and Java 21.
 - [SkysongItems](https://github.com/Ghiojo/Skysong-Special-Items): required.
   Every item tag the wardrobe reads lives there.
-- SkysongStats: optional.
+- SkysongStats: optional. When it is installed, items worn in the wardrobe count towards
+  stats with `item-tags:` exactly like items in the inventory.
 - A MineSkin API key, so new looks can be shown to players (see [MineSkin setup](#mineskin-setup)).
 
 ## Building

@@ -9,7 +9,7 @@ group = 'org.skysongdev'
 version = '1.0.0'
 
 repositories {
-    // JitPack only serves the SkysongItems API, so Gradle never asks it for anything else
+    // JitPack only serves the SkysongItems and SkysongStats APIs, so Gradle never asks it for anything else
     // and never asks the other repositories for the API.
     exclusiveContent {
         forRepository {
@@ -20,6 +20,7 @@ repositories {
         }
         filter {
             includeModule 'com.github.Ghiojo', 'Skysong-Special-Items'
+            includeModule 'com.github.Ghiojo', 'SkysongStats'
         }
     }
     // The MineSkin repository only serves the official MineSkin client.
@@ -46,6 +47,10 @@ dependencies {
     // The SkysongItems API, as JitPack publishes it from the SkysongItems git tag. It ships
     // inside the SkysongItems jar on the server, so it is never shaded.
     compileOnly 'com.github.Ghiojo:Skysong-Special-Items:1.0.1'
+    // The SkysongStats API, for the optional item source. No release has the ItemSources API
+    // yet, so this is a SkysongStats master commit that has it; swap it for the tag once
+    // one is published. Ships inside the SkysongStats jar, so it is never shaded.
+    compileOnly 'com.github.Ghiojo:SkysongStats:22ceedb98f'
     // The official MineSkin client signs rendered skins. Paper already ships Gson and Guava,
     // so only the client itself is bundled.
     implementation('org.mineskin:java-client:3.2.6') {
@@ -64,6 +69,7 @@ dependencies {
     testImplementation 'org.mockbukkit.mockbukkit:mockbukkit-v1.21:4.116.3'
     testImplementation 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
     testImplementation 'com.github.Ghiojo:Skysong-Special-Items:1.0.1'
+    testImplementation 'com.github.Ghiojo:SkysongStats:22ceedb98f'
     testImplementation 'org.mockito:mockito-core:5.14.2'
 }
 
