@@ -47,6 +47,15 @@ gallery:
   # Placeholders: <player>
   unknown-player: "<prefix> <red>No player called <white><player></white> has played here."
 
+wardrobe:
+  refused:
+    no-type: "<prefix> <red>That item can't be worn in the wardrobe."
+    not-accepted: "<prefix> <red>That item doesn't go in this slot."
+    slot-full: "<prefix> <red>Take the item in this slot out first."
+    no-free-slot: "<prefix> <red>There is no free slot for that item."
+  inventory-full: "<prefix> <red>Your inventory is full."
+  save-error: "<prefix> <red>Could not save the wardrobe. Please tell staff."
+
 reload:
   done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."
   layout-broken: "<prefix> <red>Reloaded, but wardrobe.yml has errors, so the wardrobe stays closed. The console lists them."
