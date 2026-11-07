@@ -18,7 +18,10 @@ import java.util.Optional;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 
-/** {@link SkinSigner} over MineSkin's official Java client. */
+/**
+ * {@link SkinSigner} over MineSkin's official Java client. Uploads are private, so the
+ * players' skins never appear in MineSkin's gallery or search; only the server uses them.
+ */
 public final class MineSkinSigner implements SkinSigner {
     private static final int TOO_MANY_REQUESTS = 429;
     private static final String USER_AGENT = "SkysongWardrobe";
@@ -48,7 +51,7 @@ public final class MineSkinSigner implements SkinSigner {
     public SignResult sign(BufferedImage skin, ArmModel armModel) {
         GenerateRequest request = GenerateRequest.upload(skin)
                 .variant(variant(armModel))
-                .visibility(Visibility.UNLISTED)
+                .visibility(Visibility.PRIVATE)
                 .name(USER_AGENT);
         try {
             return signed(client.generate().submitAndWait(request).get());
