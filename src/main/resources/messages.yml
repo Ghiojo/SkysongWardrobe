@@ -26,10 +26,14 @@ upload:
     not-png: "<prefix> <red>That link is not a PNG image. Use a direct link to the .png file."
     wrong-size: "<prefix> <red>Skins must be 64x64 pixels."
 
-# Placeholders: <id>, <name>, <link>
+# Placeholders: <id>, and <name> and <icon> once the entry is found
 edit:
   not-found: "<prefix> <red>Your gallery has no <white><id></white>."
+  invalid-icon: "<prefix> <red><white><icon></white> is not an item."
+  name-done: "<prefix> <green><white><id></white> is now called <white><name></white>."
+  icon-done: "<prefix> <green><white><id></white> now shows as <white><icon></white>."
   link-done: "<prefix> <green>Replaced the image of <white><id></white>. The old one is kept in the deleted folder."
+  error: "<prefix> <red>Could not edit <white><id></white>. Please tell staff."
 
 reload:
   done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."
