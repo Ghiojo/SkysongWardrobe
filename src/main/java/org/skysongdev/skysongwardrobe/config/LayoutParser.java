@@ -14,7 +14,8 @@ import java.util.Set;
 
 /**
  * Turns wardrobe.yml into a {@link WardrobeLayout}. Unlike config.yml, a broken layout is not
- * patched up: two slots on one position, or two slots with the same priority, have no sensible
+ * patched up: two slots on one position, a slot in the last two columns (kept for mannequin
+ * equipment), or two slots with the same priority, have no sensible
  * fallback. The parse then gives no layout and {@link #errors()} says why, so the menu stays
  * closed until the file is fixed.
  */
@@ -64,6 +65,11 @@ public final class LayoutParser {
         Map<Integer, String> priorities = new HashMap<>();
         for (String id : section.getKeys(false)) {
             ConfigurationSection slot = section.getConfigurationSection(id);
+            if (id.startsWith(MannequinEquipment.ID_PREFIX)) {
+                errors.add("slots." + id + ": slot ids can't start with " + MannequinEquipment.ID_PREFIX
+                        + ", which is kept for mannequin equipment.");
+                continue;
+            }
             if (slot == null) {
                 errors.add("slots." + id + " is not a section.");
                 continue;
@@ -71,6 +77,9 @@ public final class LayoutParser {
             int position = slot.getInt("position", -1);
             if (!slot.isInt("position") || position < 0 || position >= WardrobeLayout.SIZE) {
                 errors.add("slots." + id + ".position must be a whole number from 0 to 53.");
+            } else if (MannequinEquipment.isReserved(position)) {
+                errors.add("slots." + id + ".position " + position
+                        + " is in the last two columns, which are kept for mannequin equipment.");
             } else if (positions.containsKey(position)) {
                 errors.add("slots." + id + " and slots." + positions.get(position) + " share position " + position + ".");
             } else {

@@ -98,6 +98,21 @@ class LayoutParserTest {
     }
 
     @Test
+    void refusesTheColumnsKeptForMannequinEquipment() {
+        assertRefused("slots:\n  coat: {position: 7, accepts: [coat], priority: 1}\n",
+                "slots.coat.position 7 is in the last two columns, which are kept for mannequin equipment.");
+        assertRefused("slots:\n  coat: {position: 53, accepts: [coat], priority: 1}\n",
+                "slots.coat.position 53 is in the last two columns, which are kept for mannequin equipment.");
+        assertTrue(parse("slots:\n  coat: {position: 6, accepts: [coat], priority: 1}\n").isPresent());
+    }
+
+    @Test
+    void refusesSlotIdsThatLookLikeEquipment() {
+        assertRefused("slots:\n  \"equipment:head\": {position: 10, accepts: [hat], priority: 1}\n",
+                "slots.equipment:head: slot ids can't start with equipment:, which is kept for mannequin equipment.");
+    }
+
+    @Test
     void refusesMissingPriorityOrAccepts() {
         assertRefused("slots:\n  coat: {position: 10, accepts: [coat]}\n",
                 "slots.coat.priority must be a whole number.");

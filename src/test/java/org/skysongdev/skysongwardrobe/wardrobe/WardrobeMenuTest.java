@@ -6,6 +6,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockbukkit.mockbukkit.MockBukkit;
+import org.skysongdev.skysongwardrobe.config.MannequinEquipment;
 import org.skysongdev.skysongwardrobe.config.SlotDefinition;
 import org.skysongdev.skysongwardrobe.config.WardrobeLayout;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
@@ -101,5 +102,51 @@ class WardrobeMenuTest {
         assertEquals(Optional.empty(), menu.takeOut(COAT));
         assertEquals(Optional.empty(), menu.takeOut(0));
         assertTrue(wardrobe.item("coat").isEmpty());
+    }
+
+    @Test
+    void aPlayersMenuShowsFillerWhereEquipmentWouldBe() {
+        assertEquals(Material.GRAY_STAINED_GLASS_PANE, menu.getInventory().getItem(MannequinEquipment.HEAD.position()).getType());
+        assertEquals(Optional.empty(), menu.placeInto(MannequinEquipment.HEAD.position(), new ItemStack(Material.IRON_HELMET)).refusal());
+        assertTrue(wardrobe.items().isEmpty());
+    }
+
+    @Test
+    void aMannequinWearsArmourInItsLockedSlots() {
+        WardrobeMenu mannequin = WardrobeMenu.forMannequin(wardrobe, layout(), tags());
+        int head = MannequinEquipment.HEAD.position();
+
+        assertEquals(Optional.of(WardrobeMenu.Refusal.NOT_ACCEPTED),
+                mannequin.placeInto(head, new ItemStack(Material.IRON_BOOTS)).refusal());
+        assertEquals(Optional.empty(), mannequin.placeInto(head, new ItemStack(Material.IRON_HELMET)).refusal());
+
+        assertEquals(Material.IRON_HELMET, mannequin.getInventory().getItem(head).getType());
+        assertTrue(wardrobe.item("equipment:head").isPresent());
+        assertEquals(Optional.of(WardrobeMenu.Refusal.SLOT_FULL),
+                mannequin.placeInto(head, new ItemStack(Material.GOLDEN_HELMET)).refusal());
+        assertEquals(Material.IRON_HELMET, mannequin.takeOut(head).orElseThrow().getType());
+        assertTrue(wardrobe.item("equipment:head").isEmpty());
+    }
+
+    @Test
+    void shiftClickPrefersWardrobeSlotsThenEquipment() {
+        WardrobeMenu mannequin = WardrobeMenu.forMannequin(wardrobe, layout(), tags());
+
+        mannequin.placeAnywhere(new ItemStack(Material.LEATHER_CHESTPLATE));
+        mannequin.placeAnywhere(new ItemStack(Material.LEATHER_CHESTPLATE));
+        mannequin.placeAnywhere(new ItemStack(Material.STICK));
+
+        assertTrue(wardrobe.item("coat").isPresent());
+        assertTrue(wardrobe.item("equipment:chest").isPresent());
+        assertEquals(Material.STICK, wardrobe.item("equipment:main_hand").orElseThrow().getType());
+    }
+
+    @Test
+    void equipmentIsNeverWornAsALayer() {
+        WardrobeMenu mannequin = WardrobeMenu.forMannequin(wardrobe, layout(), tags());
+
+        mannequin.placeInto(MannequinEquipment.HEAD.position(), new ItemStack(Material.IRON_HELMET));
+
+        assertTrue(wardrobe.worn(layout()).isEmpty());
     }
 }
