@@ -12,6 +12,8 @@ upload:
     agree: "<green>Agree"
     decline: "<red>Decline"
   # Placeholders in every upload message: <id>, <name>, <link>
+  invalid-id: "<prefix> <red>Ids are 1 to 32 letters, digits or underscores, so <white><id></white> can't be used."
+  invalid-link: "<prefix> <red><white><link></white> is not an http or https link."
   id-taken: "<prefix> <red>Your gallery already has <white><id></white>. Pick another id, or delete that one first."
   declined: "<prefix> <gray>Upload of <white><id></white> cancelled."
   downloading: "<prefix> <gray>Downloading <white><id></white>..."
