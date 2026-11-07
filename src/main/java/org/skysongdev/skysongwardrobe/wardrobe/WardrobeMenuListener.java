@@ -115,10 +115,9 @@ public final class WardrobeMenuListener implements Listener {
     /** Staff and owner may have the same wardrobe open; keep both views current. */
     private void redrawOtherMenus(WardrobeMenu changed) {
         for (Player online : server.getOnlinePlayers()) {
-            if (online.getOpenInventory().getTopInventory().getHolder(false) instanceof WardrobeMenu other
-                    && other != changed && other.wardrobe() == changed.wardrobe()) {
-                other.draw();
-            }
+            WardrobeMenu.of(online.getOpenInventory())
+                    .filter(other -> other != changed && other.wardrobe() == changed.wardrobe())
+                    .ifPresent(WardrobeMenu::draw);
         }
     }
 
