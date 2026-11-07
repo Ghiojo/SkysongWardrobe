@@ -17,10 +17,12 @@ import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import org.skysongdev.skysongwardrobe.SkysongWardrobe;
+import org.skysongdev.skysongwardrobe.config.MannequinEquipment;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -36,6 +38,7 @@ class WardrobeMenuListenerTest {
     private ServerMock server;
     private PlayerMock player;
     private WardrobeRepository wardrobes;
+    private WardrobeRepository mannequinWardrobes;
     private WardrobeMenu menu;
 
     @BeforeEach
@@ -44,8 +47,10 @@ class WardrobeMenuListenerTest {
         SkysongWardrobe plugin = MockBukkit.load(SkysongWardrobe.class);
         player = server.addPlayer();
         wardrobes = new WardrobeRepository(folder, Logger.getAnonymousLogger());
+        mannequinWardrobes = new WardrobeRepository(folder.resolve("mannequins"), Logger.getAnonymousLogger());
         server.getPluginManager().registerEvents(
-                new WardrobeMenuListener(wardrobes, plugin.configuration(), server, Logger.getAnonymousLogger()), plugin);
+                new WardrobeMenuListener(wardrobes, mannequinWardrobes, plugin.configuration(), server,
+                        Logger.getAnonymousLogger()), plugin);
         menu = new WardrobeMenu(wardrobes.load(player.getUniqueId()), WardrobeMenuTest.layout(), WardrobeMenuTest.tags());
         player.openInventory(menu.getInventory());
     }
@@ -123,6 +128,22 @@ class WardrobeMenuListenerTest {
         player.closeInventory();
 
         server.getPluginManager().assertEventFired(WardrobeUpdateEvent.class, event -> event.getPlayer() == player);
+    }
+
+    @Test
+    void aMannequinsMenuSavesToItsOwnFolderAndAsksForARender() {
+        UUID mannequin = UUID.randomUUID();
+        WardrobeMenu dressing = WardrobeMenu.forMannequin(mannequinWardrobes.load(mannequin), WardrobeMenuTest.layout(),
+                WardrobeMenuTest.tags());
+        player.openInventory(dressing.getInventory());
+        view().setCursor(new ItemStack(Material.IRON_HELMET));
+
+        click(MannequinEquipment.HEAD.position(), ClickType.LEFT, InventoryAction.PLACE_ALL);
+        player.closeInventory();
+
+        assertTrue(Files.isRegularFile(folder.resolve("mannequins").resolve(mannequin + ".yml")));
+        server.getPluginManager().assertEventFired(MannequinUpdateEvent.class, event -> event.getMannequin().equals(mannequin));
+        server.getPluginManager().assertEventNotFired(WardrobeUpdateEvent.class);
     }
 
     private InventoryClickEvent click(int slot, ClickType type, InventoryAction action) {

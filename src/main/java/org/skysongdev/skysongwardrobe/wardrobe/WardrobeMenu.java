@@ -73,6 +73,11 @@ public final class WardrobeMenu implements InventoryHolder {
         return wardrobe;
     }
 
+    /** Whether this is a mannequin's menu, whose wardrobe is keyed by the mannequin's id. */
+    public boolean isMannequin() {
+        return equipment;
+    }
+
     /** Whether any item went in or out since the menu opened. */
     public boolean changed() {
         return changed;

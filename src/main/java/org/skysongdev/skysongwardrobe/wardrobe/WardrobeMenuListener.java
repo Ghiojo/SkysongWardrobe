@@ -25,12 +25,15 @@ import java.util.logging.Logger;
  */
 public final class WardrobeMenuListener implements Listener {
     private final WardrobeRepository wardrobes;
+    private final WardrobeRepository mannequinWardrobes;
     private final PluginConfiguration configuration;
     private final Server server;
     private final Logger logger;
 
-    public WardrobeMenuListener(WardrobeRepository wardrobes, PluginConfiguration configuration, Server server, Logger logger) {
+    public WardrobeMenuListener(WardrobeRepository wardrobes, WardrobeRepository mannequinWardrobes,
+                                PluginConfiguration configuration, Server server, Logger logger) {
         this.wardrobes = wardrobes;
+        this.mannequinWardrobes = mannequinWardrobes;
         this.configuration = configuration;
         this.server = server;
         this.logger = logger;
@@ -79,7 +82,12 @@ public final class WardrobeMenuListener implements Listener {
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        if (event.getInventory().getHolder(false) instanceof WardrobeMenu menu && menu.changed()) {
+        if (!(event.getInventory().getHolder(false) instanceof WardrobeMenu menu) || !menu.changed()) {
+            return;
+        }
+        if (menu.isMannequin()) {
+            server.getPluginManager().callEvent(new MannequinUpdateEvent(menu.wardrobe().owner()));
+        } else {
             Player owner = server.getPlayer(menu.wardrobe().owner());
             if (owner != null) {
                 server.getPluginManager().callEvent(new WardrobeUpdateEvent(owner));
@@ -104,7 +112,7 @@ public final class WardrobeMenuListener implements Listener {
 
     private void saved(WardrobeMenu menu, Player player) {
         try {
-            wardrobes.save(menu.wardrobe());
+            (menu.isMannequin() ? mannequinWardrobes : wardrobes).save(menu.wardrobe());
         } catch (IOException failed) {
             logger.log(Level.WARNING, "Could not save the wardrobe of " + menu.wardrobe().owner() + ".", failed);
             player.sendMessage(configuration.messages().get("wardrobe.save-error"));
