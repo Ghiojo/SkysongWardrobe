@@ -41,6 +41,10 @@ delete:
   done: "<prefix> <green>Deleted <white><id></white> from your gallery. Items that already use it keep showing it."
   error: "<prefix> <red>Could not delete <white><id></white>. Please tell staff."
 
+gallery:
+  # Under each entry's name in the gallery menu. Placeholders: <id>
+  entry-lore: "<dark_gray><id>"
+
 reload:
   done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."
   layout-broken: "<prefix> <red>Reloaded, but wardrobe.yml has errors, so the wardrobe stays closed. The console lists them."
