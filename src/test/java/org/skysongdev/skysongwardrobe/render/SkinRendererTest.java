@@ -66,7 +66,9 @@ class SkinRendererTest {
         queue = RenderQueue.load(folder.resolve("render-queue.yml"), (skin, arms) -> new SignResult.Signed(SIGNED), cache,
                 () -> Duration.ZERO, Clock.systemUTC(), applier, Logger.getLogger("test"));
         BaseSkins bases = new BaseSkins(cache, uri -> Optional.of(solid(Color.BLUE)), () -> false, Logger.getLogger("test"));
-        renderer = new SkinRenderer(plugin.wardrobes(), plugin.configuration(), bases, () -> layers, cache, queue, applier,
+        OutfitRenderer outfits = new OutfitRenderer(() -> layers, cache, queue,
+                () -> plugin.configuration().settings().hasMineSkinApiKey());
+        renderer = new SkinRenderer(plugin.wardrobes(), plugin.configuration(), bases, outfits, applier,
                 tasks, server, Logger.getLogger("test"));
         when(layers.layers(anyList())).thenReturn(List.of(Layer.untinted(solid(Color.RED))));
     }

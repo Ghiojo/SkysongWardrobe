@@ -5,6 +5,7 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,9 +18,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The one queue every skin upload goes through. It keeps at most one job per player (a newer
- * outfit replaces the waiting one), uploads one job at a time, waits the per-player cooldown
- * between a player's uploads, and pauses every upload for as long as MineSkin asks after a rate
+ * The one queue every skin upload goes through. It keeps at most one job per wearer (a newer
+ * outfit replaces the waiting one), uploads one job at a time, always takes players before
+ * mannequins, waits the per-wearer cooldown between a wearer's uploads, and pauses every upload for as long as MineSkin asks after a rate
  * limit. Waiting jobs are saved to render-queue.yml, so a restart or a long rate limit never
  * drops one. Call {@link #runNext()} from a repeating async task.
  */
@@ -51,19 +52,19 @@ public final class RenderQueue {
     public static RenderQueue load(Path path, SkinSigner signer, TextureCache cache, Supplier<Duration> cooldown,
                                    Clock clock, RenderListener listener, Logger logger) {
         RenderQueue queue = new RenderQueue(new RenderQueueFile(path, logger), signer, cache, cooldown, clock, listener, logger);
-        queue.file.load().forEach(job -> queue.waiting.put(job.player(), job));
+        queue.file.load().forEach(job -> queue.waiting.put(job.wearer(), job));
         return queue;
     }
 
-    /** Queues a job, replacing the player's waiting one if any; the player keeps their place in line. */
+    /** Queues a job, replacing the wearer's waiting one if any; the wearer keeps their place in line. */
     public synchronized void submit(RenderJob job) {
-        waiting.put(job.player(), job);
+        waiting.put(job.wearer(), job);
         save();
     }
 
-    /** Whether the player has a job waiting. */
-    public synchronized boolean isWaiting(UUID player) {
-        return waiting.containsKey(player);
+    /** Whether the wearer has a job waiting. */
+    public synchronized boolean isWaiting(UUID wearer) {
+        return waiting.containsKey(wearer);
     }
 
     /** The waiting jobs, oldest first. */
@@ -72,7 +73,7 @@ public final class RenderQueue {
     }
 
     /**
-     * Signs the first job whose player is off cooldown, unless uploads are paused or another
+     * Signs the first job whose wearer is off cooldown, players before mannequins, unless uploads are paused or another
      * call is already signing. Blocks while MineSkin answers.
      */
     public void runNext() {
@@ -91,11 +92,13 @@ public final class RenderQueue {
         if (now.isBefore(pausedUntil)) {
             return Optional.empty();
         }
-        return waiting.values().stream().filter(job -> offCooldown(job.player(), now)).findFirst();
+        return waiting.values().stream()
+                .filter(job -> offCooldown(job.wearer(), now))
+                .min(Comparator.comparing(RenderJob::kind));
     }
 
-    private boolean offCooldown(UUID player, Instant now) {
-        Instant last = lastUpload.get(player);
+    private boolean offCooldown(UUID wearer, Instant now) {
+        Instant last = lastUpload.get(wearer);
         return last == null || !now.isBefore(last.plus(cooldown.get()));
     }
 
@@ -103,7 +106,7 @@ public final class RenderQueue {
         Optional<SignedTexture> known = cache.find(job.hash());
         if (known.isPresent()) {
             finish(job);
-            listener.signed(job.player(), known.get());
+            listener.signed(job.wearer(), job.kind(), known.get());
             return;
         }
         SignResult result = signer.sign(job.skin(), job.armModel());
@@ -121,13 +124,13 @@ public final class RenderQueue {
             logger.log(Level.WARNING, "Could not save the texture cache; the skin still applies.", failed);
         }
         uploaded(job);
-        listener.signed(job.player(), texture);
+        listener.signed(job.wearer(), job.kind(), texture);
     }
 
     private void failed(RenderJob job, String reason) {
-        logger.warning("Could not sign the skin of " + job.player() + ": " + reason);
+        logger.warning("Could not sign the skin of " + job.wearer() + ": " + reason);
         uploaded(job);
-        listener.failed(job.player(), reason);
+        listener.failed(job.wearer(), job.kind(), reason);
     }
 
     private synchronized void pause(Duration retryAfter) {
@@ -136,14 +139,14 @@ public final class RenderQueue {
     }
 
     private synchronized void uploaded(RenderJob job) {
-        lastUpload.put(job.player(), clock.instant());
+        lastUpload.put(job.wearer(), clock.instant());
         finish(job);
     }
 
-    /** Drops the job unless a newer one for the player arrived while it was being signed. */
+    /** Drops the job unless a newer one for the wearer arrived while it was being signed. */
     private synchronized void finish(RenderJob job) {
-        if (waiting.get(job.player()) == job) {
-            waiting.remove(job.player());
+        if (waiting.get(job.wearer()) == job) {
+            waiting.remove(job.wearer());
             save();
         }
     }
