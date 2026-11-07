@@ -14,6 +14,7 @@ import org.skysongdev.skysongwardrobe.commands.WardrobeCommand;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommands;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.config.WardrobeSettings;
+import org.skysongdev.skysongwardrobe.download.PublicAddressPolicy;
 import org.skysongdev.skysongwardrobe.download.SkinDownloader;
 import org.skysongdev.skysongwardrobe.download.SkinSource;
 import org.skysongdev.skysongwardrobe.gallery.DeletedSkinArchive;
@@ -135,7 +136,8 @@ public class SkysongWardrobe extends JavaPlugin {
 
     /** Built per upload, so a reload's new size limit and timeout apply at once. */
     private static SkinSource downloader(WardrobeSettings settings) {
-        return new SkinDownloader(Duration.ofSeconds(settings.downloadTimeoutSeconds()), settings.maxDownloadKb() * 1024);
+        return new SkinDownloader(Duration.ofSeconds(settings.downloadTimeoutSeconds()), settings.maxDownloadKb() * 1024,
+                PublicAddressPolicy.system());
     }
 
     @Override

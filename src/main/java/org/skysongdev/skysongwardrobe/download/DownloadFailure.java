@@ -4,6 +4,8 @@ package org.skysongdev.skysongwardrobe.download;
 public enum DownloadFailure {
     /** Not an http or https link. */
     INVALID_LINK,
+    /** The link, or a redirect, points to the server itself or its private network. */
+    PRIVATE_ADDRESS,
     /** No answer, an error status, or the timeout ran out. */
     UNREACHABLE,
     /** Larger than {@code gallery.max-download-kb}. */

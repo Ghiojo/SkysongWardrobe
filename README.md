@@ -56,7 +56,8 @@ enough, so permissions from other plugins can be listed there. By default they a
 `skysongwardrobe.gallery` and `skysongwardrobe.apply`.
 
 Before a skin is downloaded, `/sw upload` and `/sw edit ... link` ask the player to agree
-to the upload terms.
+to the upload terms. Links to the server itself or its private network are refused,
+including through redirects.
 
 ## Item tags
 

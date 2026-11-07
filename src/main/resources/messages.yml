@@ -21,6 +21,7 @@ upload:
   error: "<prefix> <red>Could not save <white><id></white>. Please tell staff."
   failed:
     invalid-link: "<prefix> <red><white><link></white> is not an http or https link."
+    private-address: "<prefix> <red><white><link></white> points to a private address. Use a public link to the image."
     unreachable: "<prefix> <red>Could not download <white><link></white>. Check that it is a direct link to the image."
     too-large: "<prefix> <red>That file is too large to be a skin."
     not-png: "<prefix> <red>That link is not a PNG image. Use a direct link to the .png file."
