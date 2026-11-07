@@ -12,13 +12,13 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.download.SkinDownloader;
+import org.skysongdev.skysongwardrobe.gallery.Icons;
 import org.skysongdev.skysongwardrobe.gallery.SkinId;
 import org.skysongdev.skysongwardrobe.gallery.SkinUploader;
 import org.skysongdev.skysongwardrobe.gallery.UploadRequest;
 
 import java.net.URI;
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -65,19 +65,13 @@ public final class UploadCommand implements SubCommand {
             player.sendMessage(configuration.messages().get("upload.invalid-link", Map.of("link", words[0])));
             return 0;
         }
-        Optional<Material> icon = words.length > 1 ? icon(words[1]) : Optional.empty();
+        Optional<Material> icon = words.length > 1 ? Icons.parse(words[1]) : Optional.empty();
         int nameStart = icon.isPresent() ? 2 : 1;
         String name = words.length > nameStart
                 ? String.join(" ", Arrays.copyOfRange(words, nameStart, words.length))
                 : id.get().value();
         uploader.start(player, new UploadRequest(id.get(), link.get(), icon, name));
         return Command.SINGLE_SUCCESS;
-    }
-
-    /** The item a typed word names, if it is one a player can hold. */
-    static Optional<Material> icon(String word) {
-        Material material = Material.matchMaterial(word);
-        return material != null && material.isItem() && !material.isAir() ? Optional.of(material) : Optional.empty();
     }
 
     /** Suggests item names while the player is on the word after the link. */
@@ -88,13 +82,8 @@ public final class UploadCommand implements SubCommand {
         if (space < 0 || typed.indexOf(' ', space + 1) >= 0) {
             return builder.buildFuture();
         }
-        String prefix = typed.substring(space + 1).toLowerCase(Locale.ROOT);
         SuggestionsBuilder iconBuilder = builder.createOffset(builder.getStart() + space + 1);
-        Arrays.stream(Material.values())
-                .filter(material -> !material.isLegacy() && material.isItem() && !material.isAir())
-                .map(material -> material.name().toLowerCase(Locale.ROOT))
-                .filter(name -> name.startsWith(prefix))
-                .forEach(iconBuilder::suggest);
+        Icons.startingWith(typed.substring(space + 1)).forEach(iconBuilder::suggest);
         return iconBuilder.buildFuture();
     }
 }
