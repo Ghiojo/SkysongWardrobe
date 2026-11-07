@@ -45,6 +45,7 @@ class MannequinPlacerTest {
     private MannequinPlacer placer;
     private Block ground;
     private boolean regionAllows = true;
+    private boolean spawnBlocked;
     private final MannequinAccess access = new MannequinAccess() {
         @Override
         public boolean canPlace(org.bukkit.entity.Player player, Location location) {
@@ -76,7 +77,13 @@ class MannequinPlacerTest {
 
         repository = MannequinRepository.load(folder, Logger.getAnonymousLogger());
         marker = new MannequinMarker(plugin);
-        MannequinSpawner zombies = (location, model) -> location.getWorld().spawn(location, Zombie.class);
+        MannequinSpawner zombies = (location, model) -> {
+            Zombie zombie = location.getWorld().spawn(location, Zombie.class);
+            if (spawnBlocked) {
+                zombie.remove();
+            }
+            return zombie;
+        };
         placer = new MannequinPlacer(repository, marker, zombies, access, () -> tags, plugin.configuration(), placed::add,
                 Logger.getAnonymousLogger());
         ground = world.getBlockAt(0, 64, 0);
@@ -136,6 +143,16 @@ class MannequinPlacerTest {
         world.getBlockAt(0, 66, 0).setType(Material.STONE);
 
         assertEquals(MannequinPlacer.Result.NO_SPACE, placer.place(player, new ItemStack(Material.ARMOR_STAND), ground));
+        assertTrue(placed.isEmpty());
+    }
+
+    @Test
+    void keepsTheSpawnerWhenAnotherPluginStopsTheSpawn() {
+        spawnBlocked = true;
+        ItemStack item = new ItemStack(Material.ARMOR_STAND);
+
+        assertEquals(MannequinPlacer.Result.NO_ACCESS_HERE, placer.place(player, item, ground));
+        assertEquals(1, item.getAmount());
         assertTrue(placed.isEmpty());
     }
 
