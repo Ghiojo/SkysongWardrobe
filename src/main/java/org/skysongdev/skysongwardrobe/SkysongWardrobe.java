@@ -27,8 +27,11 @@ import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
 import org.skysongdev.skysongwardrobe.items.SkysongItemsTagGateway;
 import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinMarker;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinPlaceListener;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinPlacer;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinRepository;
 import org.skysongdev.skysongwardrobe.mannequin.OrphanMannequinListener;
+import org.skysongdev.skysongwardrobe.mannequin.PaperMannequinSpawner;
 import org.skysongdev.skysongwardrobe.menu.MenuListener;
 import org.skysongdev.skysongwardrobe.prompt.DialogConfirmationPrompt;
 import org.skysongdev.skysongwardrobe.render.BaseSkins;
@@ -118,7 +121,7 @@ public class SkysongWardrobe extends JavaPlugin {
         WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes, itemTags, configuration, getServer());
         getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobes, configuration, getServer(), getLogger()), this);
         getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer()), this);
-        loadMannequins();
+        loadMannequins(itemTags);
         startRendering(itemTags);
         hookSkysongStats();
 
@@ -129,13 +132,16 @@ public class SkysongWardrobe extends JavaPlugin {
     }
 
     /** Reads every placed mannequin and their wardrobes, and clears out mannequins broken earlier. */
-    private void loadMannequins() {
+    private void loadMannequins(Supplier<ItemTagGateway> itemTags) {
         mannequins = MannequinRepository.load(getDataFolder().toPath().resolve("mannequins"), getLogger());
         mannequinWardrobes = new WardrobeRepository(getDataFolder().toPath().resolve("mannequins").resolve("wardrobes"),
                 getLogger());
         mannequinMarker = new MannequinMarker(this);
         getServer().getPluginManager().registerEvents(
                 new OrphanMannequinListener(mannequins, mannequinMarker, getLogger()), this);
+        MannequinPlacer placer = new MannequinPlacer(mannequins, mannequinMarker, new PaperMannequinSpawner(), itemTags,
+                configuration, mannequin -> { }, getLogger());
+        getServer().getPluginManager().registerEvents(new MannequinPlaceListener(placer, configuration::messages), this);
     }
 
     /** SkysongStats is optional; its API classes are only loaded when it is enabled. */

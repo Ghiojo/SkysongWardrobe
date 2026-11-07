@@ -35,6 +35,16 @@ public final class SkysongItemsTagGateway implements ItemTagGateway {
     }
 
     @Override
+    public Optional<String> mannequinSkin(ItemStack item) {
+        return nonBlank(api.tags().getString(item, WardrobeTags.MANNEQUIN_SKIN)).map(id -> id.toLowerCase(Locale.ROOT));
+    }
+
+    @Override
+    public Optional<String> mannequinModel(ItemStack item) {
+        return nonBlank(api.tags().getString(item, WardrobeTags.MANNEQUIN_MODEL));
+    }
+
+    @Override
     public Color dyeColor(ItemStack item) {
         OptionalInt rgb = api.tags().getInt(item, WardrobeTags.DYE_COLOR);
         // Bits above the 24 RGB bits mean nothing to a tint, and Color.fromRGB refuses them.

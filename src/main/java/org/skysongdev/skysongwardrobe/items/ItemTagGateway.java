@@ -23,6 +23,12 @@ public interface ItemTagGateway {
     /** The item's {@code dye_color}, or white (no tint) when it has none. */
     Color dyeColor(ItemStack item);
 
+    /** The item's {@code mannequin_skin}, lowercased; present only on mannequin spawners. */
+    Optional<String> mannequinSkin(ItemStack item);
+
+    /** The item's {@code mannequin_model}, as stored. */
+    Optional<String> mannequinModel(ItemStack item);
+
     /** Writes a layer value onto a SkysongItems item, firing SkysongItems' change event for {@code player}. */
     void setLayer(Player player, ItemStack item, LayerKind kind, String value);
 

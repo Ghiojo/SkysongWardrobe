@@ -159,6 +159,16 @@ class LayerResolverTest {
             }
 
             @Override
+            public Optional<String> mannequinSkin(ItemStack item) {
+                return Optional.empty();
+            }
+
+            @Override
+            public Optional<String> mannequinModel(ItemStack item) {
+                return Optional.empty();
+            }
+
+            @Override
             public Color dyeColor(ItemStack item) {
                 return RED;
             }
