@@ -10,6 +10,8 @@ Each worn item can carry skin layers, which are drawn over the player's own skin
   Every item tag the wardrobe reads lives there.
 - SkysongStats: optional. When it is installed, items worn in the wardrobe count towards
   stats with `item-tags:` exactly like items in the inventory.
+- WorldGuard 7: optional. When it is installed, region flags decide who may place, use and
+  break mannequins (see [Mannequins](#mannequins)).
 - A MineSkin API key, so new looks can be shown to players (see [MineSkin setup](#mineskin-setup)).
 
 ## Building
@@ -73,11 +75,100 @@ Wardrobe items are SkysongItems items with these tags:
 
 Layer tags hold `uuid:id`, so they survive name changes. Players see them as `name:id`.
 
+Mannequin spawners use two more tags, described under [Mannequins](#mannequins).
+
+## Mannequins
+
+A mannequin is a player-shaped stand with its own wardrobe. It shows its outfit just like
+a player does, and it never moves, turns its head or shows a name. Its arms still sway a
+little, because the game itself animates them.
+
+### Spawner items
+
+Any SkysongItems item with a `mannequin_skin` tag is a mannequin spawner. These items can
+be crafted, bought and sold like any other item.
+
+| Tag | Value |
+| --- | --- |
+| `mannequin_skin` | The base skin the mannequin wears under its outfit: the name of a file in `mannequin-skins/`, without `.png`. |
+| `mannequin_model` | `slim` for slim arms; anything else, or no tag, means classic arms. |
+
+To place a mannequin, right-click the top of a block with a spawner. The mannequin needs
+two free blocks above that block, and it faces the player, rounded to the nearest 45°.
+The spawner is used up and saved with the mannequin, so the same item comes back when the
+mannequin is picked up.
+
+### Using a mannequin
+
+- **Right-click** opens its wardrobe. Only one player can dress a mannequin at a time, and
+  its new look is drawn when the menu closes. Player looks always go before mannequin looks
+  in the MineSkin queue.
+- **Sneak and punch** picks it up. The spawner and everything the mannequin wore drop on
+  the ground. Punching without sneaking only shows a hint, and mannequins can't be hurt.
+
+The mannequin wardrobe has the same slots as a player's, plus six **equipment** slots in
+the last two columns of the menu. Items there are worn as real equipment, so armour and
+held items show on the mannequin:
+
+| Equipment | Menu position |
+| --- | --- |
+| Head | 7 |
+| Chest | 16 |
+| Legs | 25 |
+| Feet | 34 |
+| Main hand | 17 |
+| Off hand | 26 |
+
+These positions are built in. The last two columns (positions 7, 8, 16, 17, 25, 26, 34,
+35, 43, 44, 52 and 53) are kept for them, so `wardrobe.yml` can't put slots there, and
+slot ids can't start with `equipment:`. Items worn by mannequins never count towards
+SkysongStats.
+
+### Base skins
+
+Put the base skins in `plugins/SkysongWardrobe/mannequin-skins/` as 64x64 PNG files.
+The file name is the skin's id, so `stone.png` is the skin `stone`. Names may only use
+lowercase `a-z`, `0-9` and `_`; other files are skipped with a warning. Run `/sw reload`
+after adding a skin. A spawner whose skin is missing can't place a mannequin.
+
+### Who may do what
+
+Placing a mannequin needs one of the permissions under `mannequins.permissions` in
+`config.yml` (by default `skysongwardrobe.mannequin`). The `.other` variant of any of them,
+such as `skysongwardrobe.mannequin.other`, makes a player staff: staff may open and pick up
+every mannequin, anywhere.
+
+Without WorldGuard, or outside every WorldGuard region, only a mannequin's owner and staff
+may open it or pick it up.
+
+With WorldGuard, inside a region the region decides, even for the owner. This plugin adds
+three flags:
+
+| Flag | Allows |
+| --- | --- |
+| `mannequin-place` | Placing mannequins |
+| `mannequin-use` | Opening a mannequin's wardrobe |
+| `mannequin-break` | Picking mannequins up |
+
+Region members may do all three unless the flag is set to `deny`. Other players may only
+where the flag is set to `allow`, for example `/rg flag shop mannequin-use allow`. Players with WorldGuard's region
+bypass may always.
+
+### Limits
+
+`config.yml` caps how many mannequins there can be. `0` means no limit.
+
+- `mannequins.max-per-player` (default `0`): how many mannequins one player may have placed.
+  Staff are not limited by it.
+- `mannequins.max-per-chunk` (default `15`): how many mannequins one chunk may hold, for
+  everyone.
+
 ## Configuration
 
 Run `/sw reload` after editing any of these files.
 
-- `config.yml`: permissions, download limits, the upload cooldown and the MineSkin API key.
+- `config.yml`: permissions, download limits, the upload cooldown, mannequin limits and
+  the MineSkin API key.
   Turn on `verbose` to log silent failures, such as a worn item whose skin file is missing.
 - `wardrobe.yml`: the wardrobe and gallery menus. Each wardrobe slot has a `position`
   (0 to 53), the `wardrobe_type` values it `accepts`, and a `priority`; higher priorities
@@ -95,6 +186,9 @@ Inside `plugins/SkysongWardrobe/`:
 - `wardrobes/`: what each player is wearing.
 - `texture-cache.yml`: looks MineSkin has already signed, so they are not uploaded again.
 - `render-queue.yml`: looks still waiting for MineSkin.
+- `mannequin-skins/`: the base skins mannequins can wear.
+- `mannequins/`: one file per placed mannequin, with its owner, skin, arm model and saved
+  spawner. `mannequins/wardrobes/` holds what each mannequin wears.
 
 ## MineSkin setup
 
