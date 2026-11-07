@@ -16,6 +16,16 @@ import java.util.Optional;
 public final class FakeItemTags implements ItemTagGateway {
     private final Map<Material, String> types = new HashMap<>();
     private final Map<LayerKind, String> layers = new HashMap<>();
+    private final Map<Material, String> mannequinSkins = new HashMap<>();
+    private final Map<Material, String> mannequinModels = new HashMap<>();
+
+    /** Makes every item of the material a mannequin spawner with this skin and model. */
+    public FakeItemTags spawner(Material material, String skin, String model) {
+        types.put(material, "");
+        mannequinSkins.put(material, skin);
+        mannequinModels.put(material, model);
+        return this;
+    }
 
     public FakeItemTags type(Material material, String type) {
         types.put(material, type);
@@ -34,7 +44,17 @@ public final class FakeItemTags implements ItemTagGateway {
 
     @Override
     public Optional<String> type(ItemStack item) {
-        return Optional.ofNullable(types.get(item.getType()));
+        return Optional.ofNullable(types.get(item.getType())).filter(type -> !type.isEmpty());
+    }
+
+    @Override
+    public Optional<String> mannequinSkin(ItemStack item) {
+        return Optional.ofNullable(mannequinSkins.get(item.getType()));
+    }
+
+    @Override
+    public Optional<String> mannequinModel(ItemStack item) {
+        return Optional.ofNullable(mannequinModels.get(item.getType()));
     }
 
     @Override

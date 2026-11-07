@@ -2,6 +2,7 @@ package org.skysongdev.skysongwardrobe.config;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinSkins;
 
 import java.io.File;
 import java.io.InputStream;
@@ -11,7 +12,8 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * Owns config.yml, messages.yml and wardrobe.yml: writes the defaults on first start, reads all three, and
+ * Owns config.yml, messages.yml, wardrobe.yml and the mannequin skin folder: writes the defaults on first
+ * start, reads them all, and
  * swaps in new copies on {@link #reload()}. Other parts ask it for the current values, so
  * they see a reload without having to be rebuilt.
  */
@@ -19,12 +21,14 @@ public final class PluginConfiguration {
     static final String CONFIG_FILE = "config.yml";
     static final String MESSAGES_FILE = "messages.yml";
     static final String LAYOUT_FILE = "wardrobe.yml";
+    static final String MANNEQUIN_SKINS_FOLDER = "mannequin-skins";
 
     private final Plugin plugin;
     private WardrobeSettings settings;
     private Messages messages;
     private WardrobeLayout layout;
     private GalleryMenuLayout galleryMenu;
+    private MannequinSkins mannequinSkins;
 
     public PluginConfiguration(Plugin plugin) {
         this.plugin = plugin;
@@ -54,6 +58,8 @@ public final class PluginConfiguration {
         if (layout == null) {
             plugin.getLogger().severe(LAYOUT_FILE + " has errors, so the wardrobe stays closed until it is fixed.");
         }
+
+        mannequinSkins = MannequinSkins.load(file(MANNEQUIN_SKINS_FOLDER).toPath(), plugin.getLogger());
     }
 
     public WardrobeSettings settings() {
@@ -73,6 +79,11 @@ public final class PluginConfiguration {
     /** The gallery menu's title and fixed items. */
     public GalleryMenuLayout galleryMenu() {
         return Objects.requireNonNull(galleryMenu, "reload() has not run yet");
+    }
+
+    /** The preset mannequin base skins. */
+    public MannequinSkins mannequinSkins() {
+        return Objects.requireNonNull(mannequinSkins, "reload() has not run yet");
     }
 
     private File file(String name) {

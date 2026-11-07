@@ -80,3 +80,11 @@ reload:
 render:
   # Sent when a new outfit waits for MineSkin to sign it.
   queued: "<prefix> <gray>Your new look is being prepared and will appear shortly."
+
+mannequin:
+  no-permission: "<prefix> <red>You can't place mannequins."
+  unknown-skin: "<prefix> <red>This mannequin's skin is missing. Please tell staff."
+  no-space: "<prefix> <red>A mannequin needs two free blocks above the ground."
+  player-limit: "<prefix> <red>You have placed as many mannequins as you can."
+  chunk-limit: "<prefix> <red>There are too many mannequins around here."
+  save-error: "<prefix> <red>Could not save the mannequin. Please tell staff."
