@@ -1,6 +1,8 @@
 plugins {
     id 'java'
     id 'xyz.jpenilla.run-paper' version '2.3.1'
+    // Bundles the MineSkin client into the plugin jar, which Paper cannot download for us.
+    id 'com.gradleup.shadow' version '8.3.5'
 }
 
 group = 'org.skysongdev'
@@ -20,6 +22,18 @@ repositories {
             includeModule 'com.github.Ghiojo', 'Skysong-Special-Items'
         }
     }
+    // The MineSkin repository only serves the official MineSkin client.
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'mineskin'
+                url = 'https://repo.inventivetalent.org/repository/public/'
+            }
+        }
+        filter {
+            includeGroup 'org.mineskin'
+        }
+    }
     mavenCentral()
     maven {
         name = 'papermc-repo'
@@ -32,6 +46,15 @@ dependencies {
     // The SkysongItems API, as JitPack publishes it from the SkysongItems git tag. It ships
     // inside the SkysongItems jar on the server, so it is never shaded.
     compileOnly 'com.github.Ghiojo:Skysong-Special-Items:1.0.1'
+    // The official MineSkin client signs rendered skins. Paper already ships Gson and Guava,
+    // so only the client itself is bundled.
+    implementation('org.mineskin:java-client:3.2.6') {
+        exclude group: 'com.google.code.gson'
+        exclude group: 'com.google.guava'
+    }
+    implementation('org.mineskin:java-client-java11:3.2.6') {
+        transitive = false
+    }
 
     // Tests run on JUnit 6 and MockBukkit 4.116.3, the same versions SkysongItems uses.
     // That MockBukkit release mocks Paper 1.21.11, the API this plugin compiles against.
@@ -72,6 +95,22 @@ tasks {
         // Starts a local Paper server with the plugin for manual testing: ./gradlew runServer
         minecraftVersion('1.21.11')
     }
+}
+
+shadowJar {
+    // The plain jar name, so the jar to install is the only one in build/libs.
+    archiveClassifier.set('')
+    // Moved into this plugin's package so it never clashes with another plugin's copy.
+    relocate 'org.mineskin', 'org.skysongdev.skysongwardrobe.lib.mineskin'
+}
+
+jar {
+    // shadowJar replaces the plain jar.
+    enabled = false
+}
+
+tasks.named('assemble') {
+    dependsOn shadowJar
 }
 
 processResources {
