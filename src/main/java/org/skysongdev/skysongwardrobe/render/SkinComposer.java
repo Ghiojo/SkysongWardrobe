@@ -11,8 +11,9 @@ import java.util.List;
  * Draws layers over a base skin into one 64x64 image. Layers are tinted the way Minecraft tints
  * a custom_model_data colour (each of red, green and blue multiplied by the colour's, divided by
  * 255, alpha kept), then alpha-blended over what is below, first layer lowest. Wherever a
- * layer draws on a body part's first layer, the second layer above that pixel is cleared first,
- * so the skin's (or a lower layer's) hat, jacket, sleeves and trousers never cover it.
+ * layer draws on a body part's first layer, the second layer above that pixel is first folded
+ * down onto the first layer, so the skin's (or a lower layer's) hat, jacket, sleeves and trousers
+ * never cover the layer, and still show through where it is see-through.
  */
 public final class SkinComposer {
     public static final int SIZE = 64;
@@ -29,7 +30,7 @@ public final class SkinComposer {
             graphics.setComposite(AlphaComposite.SrcOver);
             for (Layer layer : layers) {
                 BufferedImage tinted = tint(layer.image(), layer.tint());
-                SkinOverlay.clearUnder(result, tinted);
+                SkinOverlay.foldUnder(result, tinted);
                 graphics.drawImage(tinted, 0, 0, SIZE, SIZE, null);
             }
         } finally {

@@ -27,17 +27,58 @@ class SkinOverlayTest {
         BufferedImage layer = empty();
         layer.setRGB(x, y, SHIRT);
 
-        SkinOverlay.clearUnder(skin, layer);
+        SkinOverlay.foldUnder(skin, layer);
 
         assertEquals(0, skin.getRGB(overlayX, overlayY));
         assertEquals(HAIR, skin.getRGB(overlayX + 1, overlayY));
     }
 
     @Test
+    void theSecondLayerIsFoldedOntoTheFirstBeforeItIsCleared() {
+        BufferedImage skin = empty();
+        skin.setRGB(20, 20, SKIN);
+        skin.setRGB(20, 36, 0x800000FF);
+        BufferedImage layer = empty();
+        layer.setRGB(20, 20, SHIRT);
+
+        SkinOverlay.foldUnder(skin, layer);
+
+        assertEquals(SkinOverlay.over(0x800000FF, SKIN), skin.getRGB(20, 20));
+        assertEquals(0, skin.getRGB(20, 36));
+    }
+
+    @Test
+    void seeThroughClothingShowsTheFoldedSecondLayerBeneathIt() {
+        BufferedImage base = empty();
+        base.setRGB(20, 20, SKIN);
+        base.setRGB(20, 36, HAIR);
+        BufferedImage veil = empty();
+        veil.setRGB(20, 20, 0x800000FF);
+
+        int result = SkinComposer.compose(base, List.of(Layer.untinted(veil))).getRGB(20, 20);
+
+        assertEquals(0xFF, result >>> 24);
+        assertEquals(0x7F, (result >> 8) & 0xFF, 1);
+        assertEquals(0, (result >> 16) & 0xFF, 1);
+        assertEquals(0x80, result & 0xFF, 1);
+    }
+
+    @Test
+    void overBlendsLikeAlphaCompositing() {
+        assertEquals(SHIRT, SkinOverlay.over(SHIRT, SKIN));
+        assertEquals(SKIN, SkinOverlay.over(0, SKIN));
+        assertEquals(0x80FF0000, SkinOverlay.over(0x80FF0000, 0));
+        int half = SkinOverlay.over(0x800000FF, SKIN);
+        assertEquals(0xFF, half >>> 24);
+        assertEquals(0x7F, (half >> 16) & 0xFF, 1);
+        assertEquals(0x80, half & 0xFF, 1);
+    }
+
+    @Test
     void anEmptyLayerClearsNothing() {
         BufferedImage skin = filled(HAIR);
 
-        SkinOverlay.clearUnder(skin, empty());
+        SkinOverlay.foldUnder(skin, empty());
 
         assertEquals(HAIR, skin.getRGB(42, 10));
     }
