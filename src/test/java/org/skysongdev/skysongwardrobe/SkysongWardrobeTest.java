@@ -46,6 +46,6 @@ class SkysongWardrobeTest {
         SkysongWardrobe plugin = MockBukkit.load(SkysongWardrobe.class);
 
         assertEquals(List.of("Skysong_Items"), plugin.getPluginMeta().getPluginDependencies());
-        assertEquals(List.of("SkysongStats"), plugin.getPluginMeta().getPluginSoftDependencies());
+        assertEquals(List.of("SkysongStats", "WorldGuard"), plugin.getPluginMeta().getPluginSoftDependencies());
     }
 }

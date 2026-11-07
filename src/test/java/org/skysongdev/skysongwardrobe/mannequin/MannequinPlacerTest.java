@@ -44,6 +44,23 @@ class MannequinPlacerTest {
     private final FakeItemTags tags = new FakeItemTags().spawner(Material.ARMOR_STAND, "oak", "slim");
     private MannequinPlacer placer;
     private Block ground;
+    private boolean regionAllows = true;
+    private final MannequinAccess access = new MannequinAccess() {
+        @Override
+        public boolean canPlace(org.bukkit.entity.Player player, Location location) {
+            return regionAllows;
+        }
+
+        @Override
+        public boolean canUse(org.bukkit.entity.Player player, Mannequin mannequin, Location location) {
+            return true;
+        }
+
+        @Override
+        public boolean canBreak(org.bukkit.entity.Player player, Mannequin mannequin, Location location) {
+            return true;
+        }
+    };
 
     @BeforeEach
     void setUp() throws IOException {
@@ -60,7 +77,7 @@ class MannequinPlacerTest {
         repository = MannequinRepository.load(folder, Logger.getAnonymousLogger());
         marker = new MannequinMarker(plugin);
         MannequinSpawner zombies = (location, model) -> location.getWorld().spawn(location, Zombie.class);
-        placer = new MannequinPlacer(repository, marker, zombies, () -> tags, plugin.configuration(), placed::add,
+        placer = new MannequinPlacer(repository, marker, zombies, access, () -> tags, plugin.configuration(), placed::add,
                 Logger.getAnonymousLogger());
         ground = world.getBlockAt(0, 64, 0);
         ground.setType(Material.STONE);
@@ -119,6 +136,14 @@ class MannequinPlacerTest {
         world.getBlockAt(0, 66, 0).setType(Material.STONE);
 
         assertEquals(MannequinPlacer.Result.NO_SPACE, placer.place(player, new ItemStack(Material.ARMOR_STAND), ground));
+        assertTrue(placed.isEmpty());
+    }
+
+    @Test
+    void respectsWhereTheRegionsSayNo() {
+        regionAllows = false;
+
+        assertEquals(MannequinPlacer.Result.NO_ACCESS_HERE, placer.place(player, new ItemStack(Material.ARMOR_STAND), ground));
         assertTrue(placed.isEmpty());
     }
 

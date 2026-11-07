@@ -48,7 +48,7 @@ public final class MannequinBreaker {
             return Result.NOT_A_MANNEQUIN;
         }
         Mannequin mannequin = found.get();
-        if (!access.canBreak(player, mannequin)) {
+        if (!access.canBreak(player, mannequin, entity.getLocation())) {
             return Result.NO_ACCESS;
         }
         closeMenus(mannequin);

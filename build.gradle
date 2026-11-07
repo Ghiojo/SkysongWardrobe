@@ -35,6 +35,14 @@ repositories {
             includeGroup 'org.mineskin'
         }
     }
+    // EngineHub serves WorldGuard and WorldEdit, for the optional mannequin region flags.
+    maven {
+        name = 'enginehub'
+        url = 'https://maven.enginehub.org/repo/'
+        content {
+            includeGroupByRegex 'com\\.sk89q.*'
+        }
+    }
     mavenCentral()
     maven {
         name = 'papermc-repo'
@@ -51,6 +59,13 @@ dependencies {
     // yet, so this is a SkysongStats master commit that has it; swap it for the tag once
     // one is published. Ships inside the SkysongStats jar, so it is never shaded.
     compileOnly 'com.github.Ghiojo:SkysongStats:22ceedb98f'
+    // WorldGuard is optional: its flags decide who may place, use and break mannequins in a
+    // region. 7.0.17 is the last release built for Java 21; it ships on the server, so it is never shaded.
+    compileOnly('com.sk89q.worldguard:worldguard-bukkit:7.0.17') {
+        exclude group: 'org.bukkit'
+        exclude group: 'org.spigotmc'
+        exclude group: 'io.papermc.paper'
+    }
     // The official MineSkin client signs rendered skins. Paper already ships Gson and Guava,
     // so only the client itself is bundled.
     implementation('org.mineskin:java-client:3.2.6') {

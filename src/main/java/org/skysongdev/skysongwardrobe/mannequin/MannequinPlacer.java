@@ -23,12 +23,12 @@ import java.util.logging.Logger;
 
 /**
  * Places a mannequin from a spawner item onto the top of a block: checks permission, skin,
- * space and limits, spawns it facing the player, saves it with one spawner item taken from
+ * space, {@link MannequinAccess} (regions) and limits, spawns it facing the player, saves it with one spawner item taken from
  * the stack, and then hands it to {@code placed} (which renders its skin).
  */
 public final class MannequinPlacer {
     /** How a placing attempt ended; every result but {@link #NOT_A_SPAWNER} uses up the click. */
-    public enum Result { NOT_A_SPAWNER, NO_PERMISSION, UNKNOWN_SKIN, NO_SPACE, PLAYER_LIMIT, CHUNK_LIMIT, SAVE_ERROR, PLACED }
+    public enum Result { NOT_A_SPAWNER, NO_PERMISSION, UNKNOWN_SKIN, NO_SPACE, NO_ACCESS_HERE, PLAYER_LIMIT, CHUNK_LIMIT, SAVE_ERROR, PLACED }
 
     /** Facing is rounded to the nearest of eight directions. */
     private static final float FACING_STEP = 45f;
@@ -36,17 +36,19 @@ public final class MannequinPlacer {
     private final MannequinRepository mannequins;
     private final MannequinMarker marker;
     private final MannequinSpawner spawner;
+    private final MannequinAccess access;
     private final Supplier<ItemTagGateway> tags;
     private final PluginConfiguration configuration;
     private final Consumer<Mannequin> placed;
     private final Logger logger;
 
     public MannequinPlacer(MannequinRepository mannequins, MannequinMarker marker, MannequinSpawner spawner,
-                           Supplier<ItemTagGateway> tags, PluginConfiguration configuration,
+                           MannequinAccess access, Supplier<ItemTagGateway> tags, PluginConfiguration configuration,
                            Consumer<Mannequin> placed, Logger logger) {
         this.mannequins = mannequins;
         this.marker = marker;
         this.spawner = spawner;
+        this.access = access;
         this.tags = tags;
         this.configuration = configuration;
         this.placed = placed;
@@ -73,6 +75,9 @@ public final class MannequinPlacer {
         Block feet = ground.getRelative(BlockFace.UP);
         if (!feet.isPassable() || !feet.getRelative(BlockFace.UP).isPassable()) {
             return Result.NO_SPACE;
+        }
+        if (!access.canPlace(player, feet.getLocation())) {
+            return Result.NO_ACCESS_HERE;
         }
         boolean staff = Permissions.hasAnyOther(player, settings.permissions());
         if (!staff && !MannequinSettings.withinLimit(settings.perPlayer(), mannequins.countOwnedBy(player.getUniqueId()))) {

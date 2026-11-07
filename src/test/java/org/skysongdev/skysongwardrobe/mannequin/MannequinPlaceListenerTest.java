@@ -48,6 +48,7 @@ class MannequinPlaceListenerTest {
         ground.setType(Material.STONE);
         MannequinPlacer placer = new MannequinPlacer(MannequinRepository.load(folder, Logger.getAnonymousLogger()),
                 new MannequinMarker(plugin), (location, model) -> location.getWorld().spawn(location, Zombie.class),
+                new OwnerAccess(() -> plugin.configuration().settings().mannequins()),
                 () -> new FakeItemTags().spawner(Material.ARMOR_STAND, "oak", "classic"), plugin.configuration(),
                 placed::add, Logger.getAnonymousLogger());
         listener = new MannequinPlaceListener(placer, plugin.configuration()::messages);
