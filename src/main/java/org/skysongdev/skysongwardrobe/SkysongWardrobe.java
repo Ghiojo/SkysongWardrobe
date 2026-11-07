@@ -3,6 +3,7 @@ package org.skysongdev.skysongwardrobe;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.skysongdev.skysongitems.api.SkysongItemsApi;
+import org.skysongdev.skysongwardrobe.commands.DeleteCommand;
 import org.skysongdev.skysongwardrobe.commands.EditCommand;
 import org.skysongdev.skysongwardrobe.commands.ReloadCommand;
 import org.skysongdev.skysongwardrobe.commands.UploadCommand;
@@ -66,7 +67,8 @@ public class SkysongWardrobe extends JavaPlugin {
         WardrobeCommands commands = new WardrobeCommands(List.of(
                 new ReloadCommand(configuration),
                 new UploadCommand(uploader, configuration),
-                new EditCommand(galleries, uploader, configuration, getLogger())));
+                new EditCommand(galleries, uploader, configuration, getLogger()),
+                new DeleteCommand(galleries, archive, configuration, getLogger())));
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> commands.register(event.registrar()));
     }
 
