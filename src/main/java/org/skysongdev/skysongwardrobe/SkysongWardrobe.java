@@ -39,6 +39,7 @@ import org.skysongdev.skysongwardrobe.render.SkinApplier;
 import org.skysongdev.skysongwardrobe.render.SkinRenderer;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
+import org.skysongdev.skysongwardrobe.stats.SkysongStatsHook;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenuListener;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeSessionListener;
@@ -63,6 +64,7 @@ public class SkysongWardrobe extends JavaPlugin {
     private static final Duration DEFAULT_RATE_LIMIT_WAIT = Duration.ofSeconds(30);
     /** How often the render queue checks for a job it may upload: once a second. */
     private static final long QUEUE_PERIOD_TICKS = 20;
+    private static final String SKYSONG_STATS = "SkysongStats";
 
     private PluginConfiguration configuration;
     private GalleryFolders galleryFolders;
@@ -108,11 +110,25 @@ public class SkysongWardrobe extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobes, configuration, getServer(), getLogger()), this);
         getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer()), this);
         startRendering(itemTags);
+        hookSkysongStats();
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
             commands.register(event.registrar());
             wardrobeCommand.register(event.registrar());
         });
+    }
+
+    /** SkysongStats is optional; its API classes are only loaded when it is enabled. */
+    private void hookSkysongStats() {
+        if (!getServer().getPluginManager().isPluginEnabled(SKYSONG_STATS)) {
+            return;
+        }
+        try {
+            SkysongStatsHook.register(this, wardrobes, configuration);
+            getLogger().info("Worn wardrobe items now count towards SkysongStats.");
+        } catch (RuntimeException | LinkageError failed) {
+            getLogger().log(Level.WARNING, "Could not hook into SkysongStats; worn items won't count towards stats.", failed);
+        }
     }
 
     /** Wires the skin pipeline: wardrobe changes render, the queue signs through MineSkin, the applier shows the result. */
