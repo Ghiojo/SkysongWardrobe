@@ -1,4 +1,11 @@
 name: SkysongWardrobe
-version: '1.0'
-main: org.skysongdev.skysongWardrobe.SkysongWardrobe
-api-version: '1.21'
+version: '${version}'
+main: org.skysongdev.skysongwardrobe.SkysongWardrobe
+api-version: '1.21.11'
+authors: [Ghiojo]
+description: Wear SkysongItems items in a wardrobe that draws their layers onto your skin.
+
+# Every item tag the wardrobe reads lives in SkysongItems, so it must enable first.
+depend: [Skysong_Items]
+# Optional: worn items count towards stats when SkysongStats is installed.
+softdepend: [SkysongStats]
