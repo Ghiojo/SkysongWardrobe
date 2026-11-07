@@ -44,6 +44,8 @@ delete:
 gallery:
   # Under each entry's name in the gallery menu. Placeholders: <id>
   entry-lore: "<dark_gray><id>"
+  # Placeholders: <player>
+  unknown-player: "<prefix> <red>No player called <white><player></white> has played here."
 
 reload:
   done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."

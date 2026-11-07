@@ -5,6 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.skysongdev.skysongitems.api.SkysongItemsApi;
 import org.skysongdev.skysongwardrobe.commands.DeleteCommand;
 import org.skysongdev.skysongwardrobe.commands.EditCommand;
+import org.skysongdev.skysongwardrobe.commands.GalleryCommand;
 import org.skysongdev.skysongwardrobe.commands.ReloadCommand;
 import org.skysongdev.skysongwardrobe.commands.UploadCommand;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommands;
@@ -69,7 +70,8 @@ public class SkysongWardrobe extends JavaPlugin {
                 new ReloadCommand(configuration),
                 new UploadCommand(uploader, configuration),
                 new EditCommand(galleries, uploader, configuration, getLogger()),
-                new DeleteCommand(galleries, archive, configuration, getLogger())));
+                new DeleteCommand(galleries, archive, configuration, getLogger()),
+                new GalleryCommand(galleries, configuration, getServer())));
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> commands.register(event.registrar()));
     }
