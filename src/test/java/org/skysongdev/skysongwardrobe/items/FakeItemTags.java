@@ -9,9 +9,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-/** An {@link ItemTagGateway} where an item's wardrobe_type is decided by its material. */
+/**
+ * An {@link ItemTagGateway} where an item's wardrobe_type is decided by its material, and
+ * written layers are remembered per kind, as if every write went to the same item.
+ */
 public final class FakeItemTags implements ItemTagGateway {
     private final Map<Material, String> types = new HashMap<>();
+    private final Map<LayerKind, String> layers = new HashMap<>();
 
     public FakeItemTags type(Material material, String type) {
         types.put(material, type);
@@ -25,7 +29,7 @@ public final class FakeItemTags implements ItemTagGateway {
 
     @Override
     public Optional<String> layer(ItemStack item, LayerKind kind) {
-        return Optional.empty();
+        return Optional.ofNullable(layers.get(kind));
     }
 
     @Override
@@ -40,11 +44,11 @@ public final class FakeItemTags implements ItemTagGateway {
 
     @Override
     public void setLayer(Player player, ItemStack item, LayerKind kind, String value) {
-        throw new UnsupportedOperationException();
+        layers.put(kind, value);
     }
 
     @Override
     public boolean removeLayer(Player player, ItemStack item, LayerKind kind) {
-        throw new UnsupportedOperationException();
+        return layers.remove(kind) != null;
     }
 }
