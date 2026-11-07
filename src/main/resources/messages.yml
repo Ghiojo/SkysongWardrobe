@@ -90,3 +90,5 @@ mannequin:
   save-error: "<prefix> <red>Could not save the mannequin. Please tell staff."
   no-access: "<prefix> <red>This mannequin isn't yours."
   in-use: "<prefix> <red>Someone else is dressing this mannequin right now."
+  # Shown above the hotbar when a mannequin is punched without sneaking.
+  break-hint: "<gray>Sneak and punch to pick this mannequin up."

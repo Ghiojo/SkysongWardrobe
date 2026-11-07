@@ -28,6 +28,8 @@ import org.skysongdev.skysongwardrobe.items.SkysongItemsTagGateway;
 import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinAccess;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinBodies;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinBreakListener;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinBreaker;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinInteractListener;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinMarker;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinPlaceListener;
@@ -163,6 +165,10 @@ public class SkysongWardrobe extends JavaPlugin {
         MannequinAccess access = new OwnerAccess(() -> configuration.settings().mannequins());
         getServer().getPluginManager().registerEvents(new MannequinInteractListener(mannequins, mannequinWardrobes,
                 mannequinMarker, access, itemTags, configuration, getServer()), this);
+        MannequinBreaker breaker = new MannequinBreaker(mannequins, mannequinWardrobes, access, renderQueue, getServer(),
+                getLogger());
+        getServer().getPluginManager().registerEvents(
+                new MannequinBreakListener(breaker, mannequinMarker, configuration::messages), this);
     }
 
     /** SkysongStats is optional; its API classes are only loaded when it is enabled. */

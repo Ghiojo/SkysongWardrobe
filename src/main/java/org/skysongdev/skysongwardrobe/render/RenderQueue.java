@@ -62,6 +62,13 @@ public final class RenderQueue {
         save();
     }
 
+    /** Drops the wearer's waiting job, if any, such as for a mannequin that was broken. */
+    public synchronized void cancel(UUID wearer) {
+        if (waiting.remove(wearer) != null) {
+            save();
+        }
+    }
+
     /** Whether the wearer has a job waiting. */
     public synchronized boolean isWaiting(UUID wearer) {
         return waiting.containsKey(wearer);
