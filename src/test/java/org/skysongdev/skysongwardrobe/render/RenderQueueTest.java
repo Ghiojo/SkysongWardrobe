@@ -32,6 +32,7 @@ class RenderQueueTest {
     private final Deque<SignResult> answers = new ArrayDeque<>();
     private final List<BufferedImage> uploads = new ArrayList<>();
     private final List<String> heard = new ArrayList<>();
+    private final List<WearerKind> kinds = new ArrayList<>();
     private TextureCache cache;
     private RenderQueue queue;
 
@@ -50,6 +51,7 @@ class RenderQueueTest {
         queue.runNext();
 
         assertEquals(List.of("signed " + ALEX + " value"), heard);
+        assertEquals(List.of(WearerKind.PLAYER), kinds);
         assertEquals(SIGNED, cache.find(job.hash()).orElseThrow());
         assertFalse(queue.isWaiting(ALEX));
     }
@@ -73,7 +75,7 @@ class RenderQueueTest {
         RenderJob newer = job(ALEX, 3);
         queue.submit(newer);
 
-        assertEquals(List.of(newer.player(), BEA), queue.waiting().stream().map(RenderJob::player).toList());
+        assertEquals(List.of(newer.wearer(), BEA), queue.waiting().stream().map(RenderJob::wearer).toList());
         assertEquals(newer, queue.waiting().getFirst());
     }
 
@@ -153,11 +155,11 @@ class RenderQueueTest {
     @Test
     void waitingJobsSurviveARestart() {
         RenderJob job = job(ALEX, 1);
-        queue.submit(new RenderJob(BEA, job.skin(), ArmModel.SLIM, job.hash()));
+        queue.submit(new RenderJob(BEA, WearerKind.PLAYER, job.skin(), ArmModel.SLIM, job.hash()));
 
         RenderJob restored = load().waiting().getFirst();
 
-        assertEquals(BEA, restored.player());
+        assertEquals(BEA, restored.wearer());
         assertEquals(ArmModel.SLIM, restored.armModel());
         assertEquals(job.hash(), TextureCache.hash(restored.skin()));
     }
@@ -170,6 +172,36 @@ class RenderQueueTest {
         queue.runNext();
 
         assertTrue(load().waiting().isEmpty());
+    }
+
+    @Test
+    void playersGoBeforeMannequinsThatWaitedLonger() {
+        answers.add(new SignResult.Signed(SIGNED));
+        answers.add(new SignResult.Signed(SIGNED));
+        RenderJob dummy = job(BEA, 2);
+        queue.submit(new RenderJob(BEA, WearerKind.MANNEQUIN, dummy.skin(), ArmModel.CLASSIC, dummy.hash()));
+        queue.submit(job(ALEX, 1));
+
+        queue.runNext();
+        queue.runNext();
+
+        assertEquals(List.of("signed " + ALEX + " value", "signed " + BEA + " value"), heard);
+    }
+
+    @Test
+    void aMannequinRunsWhenNoPlayerIsReady() {
+        answers.add(new SignResult.Signed(SIGNED));
+        answers.add(new SignResult.Signed(SIGNED));
+        queue.submit(job(ALEX, 1));
+        queue.runNext();
+        queue.submit(job(ALEX, 3));
+        RenderJob dummy = job(BEA, 2);
+        queue.submit(new RenderJob(BEA, WearerKind.MANNEQUIN, dummy.skin(), ArmModel.CLASSIC, dummy.hash()));
+
+        queue.runNext();
+
+        assertEquals("signed " + BEA + " value", heard.getLast());
+        assertTrue(queue.isWaiting(ALEX));
     }
 
     @Test
@@ -187,12 +219,13 @@ class RenderQueueTest {
         };
         RenderListener listener = new RenderListener() {
             @Override
-            public void signed(UUID player, SignedTexture texture) {
+            public void signed(UUID player, WearerKind kind, SignedTexture texture) {
                 heard.add("signed " + player + " " + texture.value());
+                kinds.add(kind);
             }
 
             @Override
-            public void failed(UUID player, String reason) {
+            public void failed(UUID player, WearerKind kind, String reason) {
                 heard.add("failed " + player + " " + reason);
             }
         };

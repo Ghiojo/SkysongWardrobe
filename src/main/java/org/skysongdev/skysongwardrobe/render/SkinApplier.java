@@ -21,12 +21,12 @@ public final class SkinApplier implements RenderListener {
     }
 
     @Override
-    public void signed(UUID player, SignedTexture texture) {
+    public void signed(UUID player, WearerKind kind, SignedTexture texture) {
         tasks.sync(() -> apply(player, texture));
     }
 
     @Override
-    public void failed(UUID player, String reason) {
+    public void failed(UUID player, WearerKind kind, String reason) {
         // The queue logged it; the player keeps the skin they have.
     }
 

@@ -33,11 +33,14 @@ import org.skysongdev.skysongwardrobe.render.ConfiguredSigner;
 import org.skysongdev.skysongwardrobe.render.HttpImageFetcher;
 import org.skysongdev.skysongwardrobe.render.LayerResolver;
 import org.skysongdev.skysongwardrobe.render.MineSkinSigner;
+import org.skysongdev.skysongwardrobe.render.OutfitRenderer;
 import org.skysongdev.skysongwardrobe.render.RenderQueue;
+import org.skysongdev.skysongwardrobe.render.RenderRouter;
 import org.skysongdev.skysongwardrobe.render.RenderTrigger;
 import org.skysongdev.skysongwardrobe.render.SkinApplier;
 import org.skysongdev.skysongwardrobe.render.SkinRenderer;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
+import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
 import org.skysongdev.skysongwardrobe.stats.SkysongStatsHook;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenuListener;
@@ -142,10 +145,12 @@ public class SkysongWardrobe extends JavaPlugin {
                 key -> new MineSkinSigner(MineSkinSigner.client(key), DEFAULT_RATE_LIMIT_WAIT));
         renderQueue = RenderQueue.load(getDataFolder().toPath().resolve("render-queue.yml"), signer, cache,
                 () -> Duration.ofSeconds(configuration.settings().uploadCooldownSeconds()), Clock.systemUTC(),
-                applier, getLogger());
-        SkinRenderer renderer = new SkinRenderer(wardrobes, configuration, bases,
+                new RenderRouter().route(WearerKind.PLAYER, applier), getLogger());
+        OutfitRenderer outfits = new OutfitRenderer(
                 () -> new LayerResolver(galleries, itemTags.get(), () -> configuration.settings().verbose(), getLogger()),
-                cache, renderQueue, applier, tasks, getServer(), getLogger());
+                cache, renderQueue, () -> configuration.settings().hasMineSkinApiKey());
+        SkinRenderer renderer = new SkinRenderer(wardrobes, configuration, bases, outfits, applier, tasks,
+                getServer(), getLogger());
         getServer().getPluginManager().registerEvents(new RenderTrigger(renderer, bases), this);
         getServer().getScheduler().runTaskTimerAsynchronously(this, renderQueue::runNext, QUEUE_PERIOD_TICKS, QUEUE_PERIOD_TICKS);
     }

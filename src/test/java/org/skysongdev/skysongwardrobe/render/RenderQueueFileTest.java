@@ -29,10 +29,30 @@ class RenderQueueFileTest {
 
         List<RenderJob> loaded = file().load();
 
-        assertEquals(List.of(BEA, ALEX), loaded.stream().map(RenderJob::player).toList());
+        assertEquals(List.of(BEA, ALEX), loaded.stream().map(RenderJob::wearer).toList());
         assertEquals(ArmModel.SLIM, loaded.getFirst().armModel());
         assertEquals(first.hash(), loaded.getFirst().hash());
         assertEquals(first.hash(), TextureCache.hash(loaded.getFirst().skin()));
+    }
+
+    @Test
+    void keepsEachJobsWearerKind() throws IOException {
+        RenderJob player = job(ALEX, ArmModel.CLASSIC, 1);
+        RenderJob mannequin = RenderJob.of(BEA, WearerKind.MANNEQUIN, player.skin(), ArmModel.SLIM);
+        file().save(List.of(player, mannequin));
+
+        assertEquals(List.of(WearerKind.PLAYER, WearerKind.MANNEQUIN),
+                file().load().stream().map(RenderJob::kind).toList());
+    }
+
+    @Test
+    void jobsSavedWithoutAKindArePlayers() throws IOException {
+        file().save(List.of(job(ALEX, ArmModel.CLASSIC, 1)));
+        String saved = Files.readString(path());
+        Files.writeString(path(), saved.lines().filter(line -> !line.contains("kind:"))
+                .reduce("", (text, line) -> text + line + "\n"));
+
+        assertEquals(WearerKind.PLAYER, file().load().getFirst().kind());
     }
 
     @Test
@@ -56,7 +76,7 @@ class RenderQueueFileTest {
                 + "  not-a-uuid:\n    hash: x\n"
                 + "  " + BEA + ":\n    arm-model: CLASSIC\n    hash: x\n    skin: bm90IGFuIGltYWdl\n");
 
-        assertEquals(List.of(ALEX), file().load().stream().map(RenderJob::player).toList());
+        assertEquals(List.of(ALEX), file().load().stream().map(RenderJob::wearer).toList());
     }
 
     @Test

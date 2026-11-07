@@ -52,7 +52,8 @@ final class RenderQueueFile {
     void save(Collection<RenderJob> jobs) throws IOException {
         YamlConfiguration yaml = new YamlConfiguration();
         for (RenderJob job : jobs) {
-            String path = JOBS + "." + job.player();
+            String path = JOBS + "." + job.wearer();
+            yaml.set(path + ".kind", job.kind().name());
             yaml.set(path + ".arm-model", job.armModel().name());
             yaml.set(path + ".hash", job.hash());
             yaml.set(path + ".skin", png(job.skin()));
@@ -61,7 +62,7 @@ final class RenderQueueFile {
         yaml.save(file.toFile());
     }
 
-    private static RenderJob read(UUID player, ConfigurationSection entry) throws IOException {
+    private static RenderJob read(UUID wearer, ConfigurationSection entry) throws IOException {
         if (entry == null) {
             throw new IOException("not a section");
         }
@@ -69,7 +70,9 @@ final class RenderQueueFile {
         if (skin == null) {
             throw new IOException("the skin is not an image");
         }
-        return new RenderJob(player, skin, ArmModel.valueOf(entry.getString("arm-model", "")), entry.getString("hash", ""));
+        // Jobs saved before mannequins existed have no kind and are all players.
+        WearerKind kind = WearerKind.valueOf(entry.getString("kind", WearerKind.PLAYER.name()));
+        return new RenderJob(wearer, kind, skin, ArmModel.valueOf(entry.getString("arm-model", "")), entry.getString("hash", ""));
     }
 
     private static String png(BufferedImage image) throws IOException {

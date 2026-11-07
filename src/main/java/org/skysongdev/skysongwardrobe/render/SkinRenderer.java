@@ -8,40 +8,33 @@ import org.skysongdev.skysongwardrobe.config.WardrobeLayout;
 import org.skysongdev.skysongwardrobe.scheduling.TaskRunner;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
-import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
  * Draws a player's outfit onto their base skin. The wardrobe and the current texture are read
- * on the main thread; the base download, layer files and composing run off it. An outfit signed
- * before is applied from the cache, a new one is queued for MineSkin, and an empty outfit puts
- * the base skin back.
+ * on the main thread; the base download and the {@link OutfitRenderer} run off it. An outfit
+ * signed before is applied from the cache, a new one is queued for MineSkin, and an empty
+ * outfit puts the base skin back.
  */
 public final class SkinRenderer {
     private final WardrobeRepository wardrobes;
     private final PluginConfiguration configuration;
     private final BaseSkins bases;
-    private final Supplier<LayerResolver> layers;
-    private final TextureCache cache;
-    private final RenderQueue queue;
+    private final OutfitRenderer outfits;
     private final SkinApplier applier;
     private final TaskRunner tasks;
     private final Server server;
     private final Logger logger;
 
     public SkinRenderer(WardrobeRepository wardrobes, PluginConfiguration configuration, BaseSkins bases,
-                        Supplier<LayerResolver> layers, TextureCache cache, RenderQueue queue, SkinApplier applier,
-                        TaskRunner tasks, Server server, Logger logger) {
+                        OutfitRenderer outfits, SkinApplier applier, TaskRunner tasks, Server server, Logger logger) {
         this.wardrobes = wardrobes;
         this.configuration = configuration;
         this.bases = bases;
-        this.layers = layers;
-        this.cache = cache;
-        this.queue = queue;
+        this.outfits = outfits;
         this.applier = applier;
         this.tasks = tasks;
         this.server = server;
@@ -65,26 +58,17 @@ public final class SkinRenderer {
         if (base.isEmpty()) {
             return;
         }
-        List<Layer> drawn = layers.get().layers(worn);
-        if (drawn.isEmpty()) {
-            applyLater(owner, base.get().texture());
-            return;
+        OutfitRenderer.Outcome outcome = outfits.render(owner, WearerKind.PLAYER, base.get().image(),
+                base.get().armModel(), Optional.of(base.get().texture()), worn);
+        switch (outcome) {
+            case OutfitRenderer.Outcome.Ready ready -> tasks.sync(() -> applier.apply(owner, ready.texture()));
+            case OutfitRenderer.Outcome.Queued queued -> tasks.sync(() -> tellQueued(owner));
+            case OutfitRenderer.Outcome.NoApiKey none -> {
+                if (configuration.settings().verbose()) {
+                    logger.info("Not rendering the outfit of " + owner + ": config.yml has no MineSkin API key.");
+                }
+            }
         }
-        BufferedImage skin = SkinComposer.compose(base.get().image(), drawn);
-        RenderJob job = RenderJob.of(owner, skin, base.get().armModel());
-        Optional<SignedTexture> known = cache.find(job.hash());
-        if (known.isPresent()) {
-            applyLater(owner, known.get());
-        } else if (configuration.settings().hasMineSkinApiKey()) {
-            queue.submit(job);
-            tasks.sync(() -> tellQueued(owner));
-        } else if (configuration.settings().verbose()) {
-            logger.info("Not rendering the outfit of " + owner + ": config.yml has no MineSkin API key.");
-        }
-    }
-
-    private void applyLater(UUID owner, SignedTexture texture) {
-        tasks.sync(() -> applier.apply(owner, texture));
     }
 
     private void tellQueued(UUID owner) {
