@@ -8,7 +8,8 @@ filler:
   name: " "
 
 # Each slot needs:
-#   position: where it sits in the menu (0 to 53), different for every slot
+#   position: where it sits in the menu (0 to 53), different for every slot. The last two
+#             columns (7, 8, 16, 17, ... 52, 53) are kept for mannequin equipment.
 #   accepts:  the wardrobe_type tag values an item needs to go in
 #   priority: the order its layers are drawn in; higher is drawn over lower, different for every slot
 slots:

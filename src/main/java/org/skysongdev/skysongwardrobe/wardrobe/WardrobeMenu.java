@@ -7,14 +7,18 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
+import org.skysongdev.skysongwardrobe.config.MannequinEquipment;
 import org.skysongdev.skysongwardrobe.config.SlotDefinition;
 import org.skysongdev.skysongwardrobe.config.WardrobeLayout;
 import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 /**
- * One open wardrobe menu: filler everywhere but the slots, which show the stored items.
+ * One open wardrobe menu: filler everywhere but the slots, which show the stored items. A
+ * mannequin's menu also has the locked {@link MannequinEquipment} slots, which take armour and
+ * held items instead of wardrobe items.
  * Every move goes through here, so the slot rules hold whether a player clicks, shift-clicks
  * or uses the cursor; {@link WardrobeMenuListener} turns inventory events into these calls.
  */
@@ -36,15 +40,27 @@ public final class WardrobeMenu implements InventoryHolder {
     private final Wardrobe wardrobe;
     private final WardrobeLayout layout;
     private final ItemTagGateway tags;
+    private final boolean equipment;
     private final Inventory inventory;
     private boolean changed;
 
+    /** A player's wardrobe menu. */
     public WardrobeMenu(Wardrobe wardrobe, WardrobeLayout layout, ItemTagGateway tags) {
+        this(wardrobe, layout, tags, false);
+    }
+
+    private WardrobeMenu(Wardrobe wardrobe, WardrobeLayout layout, ItemTagGateway tags, boolean equipment) {
         this.wardrobe = wardrobe;
         this.layout = layout;
         this.tags = tags;
+        this.equipment = equipment;
         this.inventory = Bukkit.createInventory(this, WardrobeLayout.SIZE, MiniMessage.miniMessage().deserialize(layout.title()));
         draw();
+    }
+
+    /** A mannequin's wardrobe menu, with its equipment slots. */
+    public static WardrobeMenu forMannequin(Wardrobe wardrobe, WardrobeLayout layout, ItemTagGateway tags) {
+        return new WardrobeMenu(wardrobe, layout, tags, true);
     }
 
     /** The wardrobe menu a player is looking at, if any. */
@@ -64,6 +80,10 @@ public final class WardrobeMenu implements InventoryHolder {
 
     /** Puts one of {@code item} into the slot at {@code position}; returns the rest of the stack. */
     public Move placeInto(int position, ItemStack item) {
+        Optional<MannequinEquipment> worn = equipmentAt(position);
+        if (worn.isPresent() && item != null && !item.isEmpty()) {
+            return placeEquipment(worn.get(), item);
+        }
         Optional<SlotDefinition> slot = layout.slotAt(position);
         if (slot.isEmpty() || item == null || item.isEmpty()) {
             return Move.done(item);
@@ -75,27 +95,35 @@ public final class WardrobeMenu implements InventoryHolder {
         if (refusal.isPresent()) {
             return Move.refused(item, refusal.get());
         }
-        return Move.done(store(slot.get(), item));
+        return Move.done(store(slot.get().id(), item));
     }
 
     /** Puts one of {@code item} into the first free slot that accepts it, for shift-clicks. */
     public Move placeAnywhere(ItemStack item) {
         Optional<String> type = tags.type(item);
-        if (type.isEmpty()) {
-            return Move.refused(item, Refusal.NO_TYPE);
+        Optional<SlotDefinition> free = type.flatMap(wanted -> layout.slots().stream()
+                .filter(slot -> slot.accepts(wanted) && wardrobe.item(slot.id()).isEmpty())
+                .findFirst());
+        if (free.isPresent()) {
+            return Move.done(store(free.get().id(), item));
         }
-        Optional<SlotDefinition> free = layout.slots().stream()
-                .filter(slot -> slot.accepts(type.get()) && wardrobe.item(slot.id()).isEmpty())
-                .findFirst();
-        return free.map(slot -> Move.done(store(slot, item))).orElseGet(() -> Move.refused(item, Refusal.NO_FREE_SLOT));
+        Optional<MannequinEquipment> freeEquipment = equipment
+                ? Arrays.stream(MannequinEquipment.values())
+                        .filter(slot -> slot.fits(item) && wardrobe.item(slot.wardrobeId()).isEmpty())
+                        .findFirst()
+                : Optional.empty();
+        if (freeEquipment.isPresent()) {
+            return Move.done(store(freeEquipment.get().wardrobeId(), item));
+        }
+        return Move.refused(item, type.isEmpty() && !equipment ? Refusal.NO_TYPE : Refusal.NO_FREE_SLOT);
     }
 
     /** Takes the item out of the slot at {@code position}; empty if there is none. */
     public Optional<ItemStack> takeOut(int position) {
-        Optional<SlotDefinition> slot = layout.slotAt(position);
-        Optional<ItemStack> item = slot.flatMap(definition -> wardrobe.item(definition.id()));
+        Optional<String> id = storedAt(position);
+        Optional<ItemStack> item = id.flatMap(wardrobe::item);
         item.ifPresent(taken -> {
-            wardrobe.put(slot.get().id(), null);
+            wardrobe.put(id.get(), null);
             changed = true;
             draw();
         });
@@ -104,8 +132,8 @@ public final class WardrobeMenu implements InventoryHolder {
 
     /** Puts an item back after it could not be given to the player. */
     public void undoTakeOut(int position, ItemStack item) {
-        layout.slotAt(position).ifPresent(slot -> {
-            wardrobe.put(slot.id(), item);
+        storedAt(position).ifPresent(id -> {
+            wardrobe.put(id, item);
             draw();
         });
     }
@@ -114,8 +142,8 @@ public final class WardrobeMenu implements InventoryHolder {
     public void draw() {
         ItemStack filler = filler();
         for (int position = 0; position < WardrobeLayout.SIZE; position++) {
-            Optional<SlotDefinition> slot = layout.slotAt(position);
-            inventory.setItem(position, slot.isPresent() ? wardrobe.item(slot.get().id()).orElse(null) : filler);
+            Optional<String> id = storedAt(position);
+            inventory.setItem(position, id.isPresent() ? wardrobe.item(id.get()).orElse(null) : filler);
         }
     }
 
@@ -132,8 +160,31 @@ public final class WardrobeMenu implements InventoryHolder {
         return slot.accepts(type.get()) ? Optional.empty() : Optional.of(Refusal.NOT_ACCEPTED);
     }
 
-    private ItemStack store(SlotDefinition slot, ItemStack item) {
-        wardrobe.put(slot.id(), item.asOne());
+    private Move placeEquipment(MannequinEquipment slot, ItemStack item) {
+        if (wardrobe.item(slot.wardrobeId()).isPresent()) {
+            return Move.refused(item, Refusal.SLOT_FULL);
+        }
+        if (!slot.fits(item)) {
+            return Move.refused(item, Refusal.NOT_ACCEPTED);
+        }
+        return Move.done(store(slot.wardrobeId(), item));
+    }
+
+    private Optional<MannequinEquipment> equipmentAt(int position) {
+        return equipment ? MannequinEquipment.at(position) : Optional.empty();
+    }
+
+    /** The wardrobe key of whatever is stored at a menu position: a slot id or an equipment key. */
+    private Optional<String> storedAt(int position) {
+        Optional<MannequinEquipment> worn = equipmentAt(position);
+        if (worn.isPresent()) {
+            return Optional.of(worn.get().wardrobeId());
+        }
+        return layout.slotAt(position).map(SlotDefinition::id);
+    }
+
+    private ItemStack store(String id, ItemStack item) {
+        wardrobe.put(id, item.asOne());
         changed = true;
         draw();
         return item.getAmount() > 1 ? item.asQuantity(item.getAmount() - 1) : ItemStack.empty();
