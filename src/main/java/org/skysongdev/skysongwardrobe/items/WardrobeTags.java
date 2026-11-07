@@ -10,6 +10,10 @@ public final class WardrobeTags {
     public static final String TYPE = "wardrobe_type";
     /** INT, built into SkysongItems: a packed RGB colour, the same value a CustomModelData tint uses. */
     public static final String DYE_COLOR = "dye_color";
+    /** STRING: makes the item a mannequin spawner; the id of the mannequin's base skin in mannequin-skins/. */
+    public static final String MANNEQUIN_SKIN = "mannequin_skin";
+    /** STRING: the spawned mannequin's arm model, {@code classic} or {@code slim}; anything else means classic. */
+    public static final String MANNEQUIN_MODEL = "mannequin_model";
 
     private WardrobeTags() {
     }

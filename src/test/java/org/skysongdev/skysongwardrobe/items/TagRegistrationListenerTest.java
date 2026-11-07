@@ -57,12 +57,14 @@ class TagRegistrationListenerTest {
     }
 
     @Test
-    void registersTheThreeStringTags() {
+    void registersEveryStringTag() {
         listener.onRegister(new SkysongItemsRegisterEvent(registrar));
 
         verify(registrar).registerTag(plugin, "wardrobe_layer", TagType.STRING);
         verify(registrar).registerTag(plugin, "wardrobe_dyable_layer", TagType.STRING);
         verify(registrar).registerTag(plugin, "wardrobe_type", TagType.STRING);
+        verify(registrar).registerTag(plugin, "mannequin_skin", TagType.STRING);
+        verify(registrar).registerTag(plugin, "mannequin_model", TagType.STRING);
         assertTrue(warnings.isEmpty());
     }
 

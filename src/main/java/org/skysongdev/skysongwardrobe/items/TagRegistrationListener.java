@@ -13,12 +13,13 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
- * Registers the wardrobe tags with SkysongItems, and checks that its built-in {@code dye_color}
+ * Registers the wardrobe and mannequin tags with SkysongItems, and checks that its built-in {@code dye_color}
  * tag is there. SkysongItems forgets registered tags on {@code /si reload} and asks again, so
  * this registers on every {@link SkysongItemsRegisterEvent}, not once.
  */
 public final class TagRegistrationListener implements Listener {
-    static final List<String> OWN_TAGS = List.of(WardrobeTags.LAYER, WardrobeTags.DYABLE_LAYER, WardrobeTags.TYPE);
+    static final List<String> OWN_TAGS = List.of(WardrobeTags.LAYER, WardrobeTags.DYABLE_LAYER, WardrobeTags.TYPE,
+            WardrobeTags.MANNEQUIN_SKIN, WardrobeTags.MANNEQUIN_MODEL);
 
     private final Plugin plugin;
     private final Supplier<SkysongItemsApi> api;

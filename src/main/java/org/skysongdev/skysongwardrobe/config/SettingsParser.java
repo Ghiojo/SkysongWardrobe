@@ -15,6 +15,9 @@ public final class SettingsParser {
     static final int DEFAULT_MAX_DOWNLOAD_KB = 512;
     static final int DEFAULT_DOWNLOAD_TIMEOUT_SECONDS = 10;
     static final int DEFAULT_UPLOAD_COOLDOWN_SECONDS = 30;
+    static final String DEFAULT_MANNEQUIN_PERMISSION = "skysongwardrobe.mannequin";
+    static final int DEFAULT_MANNEQUINS_PER_PLAYER = 0;
+    static final int DEFAULT_MANNEQUINS_PER_CHUNK = 15;
 
     private final List<String> warnings = new ArrayList<>();
 
@@ -28,7 +31,11 @@ public final class SettingsParser {
                 positiveInt(config, "gallery.download-timeout-seconds", DEFAULT_DOWNLOAD_TIMEOUT_SECONDS),
                 permissions(config, "apply.permissions", DEFAULT_APPLY_PERMISSION),
                 nonNegativeInt(config, "render.upload-cooldown-seconds", DEFAULT_UPLOAD_COOLDOWN_SECONDS),
-                config.getString("mineskin.api-key", "").trim());
+                config.getString("mineskin.api-key", "").trim(),
+                new MannequinSettings(
+                        permissions(config, "mannequins.permissions", DEFAULT_MANNEQUIN_PERMISSION),
+                        nonNegativeInt(config, "mannequins.max-per-player", DEFAULT_MANNEQUINS_PER_PLAYER),
+                        nonNegativeInt(config, "mannequins.max-per-chunk", DEFAULT_MANNEQUINS_PER_CHUNK)));
     }
 
     /** The values the last {@link #parse} replaced with their defaults, one line each. */
