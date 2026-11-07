@@ -2,3 +2,12 @@
 # <prefix> is replaced by the prefix below. Run /sw reload after editing.
 
 prefix: "<dark_gray>[<gold>Wardrobe</gold>]</dark_gray>"
+
+# The Agree/Decline screen /sw upload shows before downloading.
+# Placeholders: <id>, <name>, <link>
+upload:
+  prompt:
+    title: "<gold>Upload a skin"
+    body: "<gray>You are adding <white><name></white> (<white><id></white>) to your gallery from:<newline><white><link></white><newline><newline>Only upload skins you made or may use."
+    agree: "<green>Agree"
+    decline: "<red>Decline"
