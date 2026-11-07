@@ -3,10 +3,12 @@ package org.skysongdev.skysongwardrobe;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.skysongdev.skysongitems.api.SkysongItemsApi;
+import org.skysongdev.skysongwardrobe.commands.ApplyCommand;
 import org.skysongdev.skysongwardrobe.commands.DeleteCommand;
 import org.skysongdev.skysongwardrobe.commands.EditCommand;
 import org.skysongdev.skysongwardrobe.commands.GalleryCommand;
 import org.skysongdev.skysongwardrobe.commands.ReloadCommand;
+import org.skysongdev.skysongwardrobe.commands.UnapplyCommand;
 import org.skysongdev.skysongwardrobe.commands.UploadCommand;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommand;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommands;
@@ -20,6 +22,7 @@ import org.skysongdev.skysongwardrobe.gallery.GalleryFolders;
 import org.skysongdev.skysongwardrobe.gallery.GalleryRepository;
 import org.skysongdev.skysongwardrobe.gallery.MojangNameLookup;
 import org.skysongdev.skysongwardrobe.gallery.SkinUploader;
+import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
 import org.skysongdev.skysongwardrobe.items.SkysongItemsTagGateway;
 import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
 import org.skysongdev.skysongwardrobe.menu.MenuListener;
@@ -33,6 +36,7 @@ import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 
 /**
@@ -69,6 +73,7 @@ public class SkysongWardrobe extends JavaPlugin {
         galleries = new GalleryRepository(galleryFolders, getLogger());
 
         DeletedSkinArchive archive = new DeletedSkinArchive(getDataFolder().toPath().resolve("deleted"));
+        Supplier<ItemTagGateway> itemTags = () -> new SkysongItemsTagGateway(SkysongItemsApi.get());
         SkinUploader uploader = new SkinUploader(galleries, archive, () -> downloader(configuration.settings()),
                 new DialogConfirmationPrompt(), configuration, new BukkitTaskRunner(this), Clock.systemUTC(), getLogger());
 
@@ -77,11 +82,12 @@ public class SkysongWardrobe extends JavaPlugin {
                 new UploadCommand(uploader, configuration),
                 new EditCommand(galleries, uploader, configuration, getLogger()),
                 new DeleteCommand(galleries, archive, configuration, getLogger()),
-                new GalleryCommand(galleries, configuration, getServer())));
+                new GalleryCommand(galleries, configuration, getServer()),
+                new ApplyCommand(galleries, itemTags, configuration, getServer()),
+                new UnapplyCommand(itemTags, configuration)));
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
         wardrobes = new WardrobeRepository(getDataFolder().toPath().resolve("wardrobes"), getLogger());
-        WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes,
-                () -> new SkysongItemsTagGateway(SkysongItemsApi.get()), configuration, getServer());
+        WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes, itemTags, configuration, getServer());
         getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobes, configuration, getServer(), getLogger()), this);
         getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer()), this);
 

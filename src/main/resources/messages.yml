@@ -59,6 +59,19 @@ wardrobe:
   # Placeholders: <player>
   unknown-player: "<prefix> <red>No player called <white><player></white> has played here."
 
+# Placeholders: <player> (the gallery's owner) and <id>
+apply:
+  done: "<prefix> <green>Applied <white><player>:<id></white> to the item in your hand."
+  not-found: "<prefix> <red><white><player></white>'s gallery has no <white><id></white>."
+  unknown-player: "<prefix> <red>No player called <white><player></white> has played here."
+  no-permission-other: "<prefix> <red>You can only apply skins from your own gallery."
+  unknown-layer: "<prefix> <red>The layer must be regular or dyed."
+  not-a-skysong-item: "<prefix> <red>Hold a SkysongItems item in your main hand."
+
+unapply:
+  done: "<prefix> <green>Removed that layer from the item in your hand."
+  nothing: "<prefix> <red>The item in your hand has no such layer."
+
 reload:
   done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."
   layout-broken: "<prefix> <red>Reloaded, but wardrobe.yml has errors, so the wardrobe stays closed. The console lists them."
