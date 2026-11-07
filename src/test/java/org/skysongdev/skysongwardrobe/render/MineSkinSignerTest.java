@@ -65,7 +65,7 @@ class MineSkinSignerTest {
         ArgumentCaptor<GenerateRequest> request = ArgumentCaptor.forClass(GenerateRequest.class);
         verify(generate).submitAndWait(request.capture());
         assertEquals("slim", sentOptions(request.getValue()).get("variant").getAsString());
-        assertEquals("unlisted", sentOptions(request.getValue()).get("visibility").getAsString());
+        assertEquals("private", sentOptions(request.getValue()).get("visibility").getAsString());
     }
 
     @Test

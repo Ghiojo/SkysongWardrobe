@@ -105,6 +105,10 @@ still works, but new looks are not shown to players.
 2. Create an API key there.
 3. Put it in `config.yml` under `mineskin.api-key`, then run `/sw reload`.
 
+Skins are uploaded to MineSkin as **private**, so they never show up in MineSkin's public
+gallery or search, and only this server uses them. If uploads fail with a message about
+private skins, check that your MineSkin account allows private skins.
+
 Keep the key private. If MineSkin asks the plugin to slow down, uploads pause and resume
 by themselves. `render.upload-cooldown-seconds` sets the shortest time between two
 uploads for the same player.
