@@ -9,6 +9,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -121,9 +123,22 @@ public final class PlayerGallery {
         try {
             URI link = new URI(section.getString("link"));
             Optional<Material> icon = Optional.ofNullable(section.getString("icon")).map(Material::matchMaterial);
-            return Optional.of(new SkinEntry(id.get(), section.getString("name", key), icon, link));
+            return Optional.of(new SkinEntry(id.get(), section.getString("name", key), icon, link,
+                    uploadedAt(section.getString("uploaded-at"))));
         } catch (URISyntaxException brokenLink) {
             return Optional.empty();
+        }
+    }
+
+    /** A hand-written entry may have no time; it then sorts as the oldest. */
+    private static Instant uploadedAt(String stored) {
+        if (stored == null) {
+            return Instant.EPOCH;
+        }
+        try {
+            return Instant.parse(stored);
+        } catch (DateTimeParseException broken) {
+            return Instant.EPOCH;
         }
     }
 
@@ -135,6 +150,7 @@ public final class PlayerGallery {
             index.set(path + ".name", entry.name());
             entry.icon().ifPresent(icon -> index.set(path + ".icon", icon.name()));
             index.set(path + ".link", entry.link().toString());
+            index.set(path + ".uploaded-at", entry.uploadedAt().toString());
         }
         Files.createDirectories(folder);
         index.save(folder.resolve(INDEX_FILE).toFile());

@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -122,6 +123,6 @@ class PlayerGalleryTest {
     }
 
     private static SkinEntry entry(String id) {
-        return new SkinEntry(new SkinId(id), id, Optional.empty(), URI.create("https://example.com/" + id + ".png"));
+        return new SkinEntry(new SkinId(id), id, Optional.empty(), URI.create("https://example.com/" + id + ".png"), Instant.parse("2026-11-06T12:00:00Z"));
     }
 }

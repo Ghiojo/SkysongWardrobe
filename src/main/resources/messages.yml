@@ -11,6 +11,18 @@ upload:
     body: "<gray>You are adding <white><name></white> (<white><id></white>) to your gallery from:<newline><white><link></white><newline><newline>Only upload skins you made or may use."
     agree: "<green>Agree"
     decline: "<red>Decline"
+  # Placeholders in every upload message: <id>, <name>, <link>
+  id-taken: "<prefix> <red>Your gallery already has <white><id></white>. Pick another id, or delete that one first."
+  declined: "<prefix> <gray>Upload of <white><id></white> cancelled."
+  downloading: "<prefix> <gray>Downloading <white><id></white>..."
+  saved: "<prefix> <green>Saved <white><name></white> as <white><id></white> in your gallery."
+  error: "<prefix> <red>Could not save <white><id></white>. Please tell staff."
+  failed:
+    invalid-link: "<prefix> <red><white><link></white> is not an http or https link."
+    unreachable: "<prefix> <red>Could not download <white><link></white>. Check that it is a direct link to the image."
+    too-large: "<prefix> <red>That file is too large to be a skin."
+    not-png: "<prefix> <red>That link is not a PNG image. Use a direct link to the .png file."
+    wrong-size: "<prefix> <red>Skins must be 64x64 pixels."
 
 reload:
   done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."
