@@ -24,6 +24,7 @@ public final class PluginConfiguration {
     private WardrobeSettings settings;
     private Messages messages;
     private WardrobeLayout layout;
+    private GalleryMenuLayout galleryMenu;
 
     public PluginConfiguration(Plugin plugin) {
         this.plugin = plugin;
@@ -42,8 +43,13 @@ public final class PluginConfiguration {
         messages = new Messages(YamlConfiguration.loadConfiguration(file(MESSAGES_FILE)),
                 bundled(MESSAGES_FILE), plugin.getLogger());
 
+        YamlConfiguration layoutFile = YamlConfiguration.loadConfiguration(file(LAYOUT_FILE));
+        GalleryMenuParser galleryParser = new GalleryMenuParser();
+        galleryMenu = galleryParser.parse(layoutFile);
+        galleryParser.warnings().forEach(warning -> plugin.getLogger().warning(LAYOUT_FILE + ": " + warning));
+
         LayoutParser layoutParser = new LayoutParser();
-        layout = layoutParser.parse(YamlConfiguration.loadConfiguration(file(LAYOUT_FILE))).orElse(null);
+        layout = layoutParser.parse(layoutFile).orElse(null);
         layoutParser.errors().forEach(error -> plugin.getLogger().severe(LAYOUT_FILE + ": " + error));
         if (layout == null) {
             plugin.getLogger().severe(LAYOUT_FILE + " has errors, so the wardrobe stays closed until it is fixed.");
@@ -62,6 +68,11 @@ public final class PluginConfiguration {
     public Optional<WardrobeLayout> layout() {
         Objects.requireNonNull(settings, "reload() has not run yet");
         return Optional.ofNullable(layout);
+    }
+
+    /** The gallery menu's title and fixed items. */
+    public GalleryMenuLayout galleryMenu() {
+        return Objects.requireNonNull(galleryMenu, "reload() has not run yet");
     }
 
     private File file(String name) {

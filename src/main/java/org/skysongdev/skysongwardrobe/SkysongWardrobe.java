@@ -19,6 +19,7 @@ import org.skysongdev.skysongwardrobe.gallery.GalleryRepository;
 import org.skysongdev.skysongwardrobe.gallery.MojangNameLookup;
 import org.skysongdev.skysongwardrobe.gallery.SkinUploader;
 import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
+import org.skysongdev.skysongwardrobe.menu.MenuListener;
 import org.skysongdev.skysongwardrobe.prompt.DialogConfirmationPrompt;
 import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
 
@@ -69,6 +70,7 @@ public class SkysongWardrobe extends JavaPlugin {
                 new UploadCommand(uploader, configuration),
                 new EditCommand(galleries, uploader, configuration, getLogger()),
                 new DeleteCommand(galleries, archive, configuration, getLogger())));
+        getServer().getPluginManager().registerEvents(new MenuListener(), this);
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> commands.register(event.registrar()));
     }
 

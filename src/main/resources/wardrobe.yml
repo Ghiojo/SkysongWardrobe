@@ -24,3 +24,17 @@ slots:
     position: 28
     accepts: [boots]
     priority: 10
+
+# The /sw gallery menu: entries fill rows 1 to 5, the bottom row holds the page arrows.
+# <player> in the title is the gallery's owner.
+gallery:
+  title: "<dark_gray><player>'s gallery"
+  filler:
+    material: GRAY_STAINED_GLASS_PANE
+    name: " "
+  previous-page:
+    material: ARROW
+    name: "<yellow>Previous page"
+  next-page:
+    material: ARROW
+    name: "<yellow>Next page"
