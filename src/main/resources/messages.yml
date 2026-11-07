@@ -11,3 +11,7 @@ upload:
     body: "<gray>You are adding <white><name></white> (<white><id></white>) to your gallery from:<newline><white><link></white><newline><newline>Only upload skins you made or may use."
     agree: "<green>Agree"
     decline: "<red>Decline"
+
+reload:
+  done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."
+  layout-broken: "<prefix> <red>Reloaded, but wardrobe.yml has errors, so the wardrobe stays closed. The console lists them."
