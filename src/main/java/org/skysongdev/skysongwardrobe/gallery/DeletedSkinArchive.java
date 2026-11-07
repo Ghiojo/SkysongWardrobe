@@ -27,12 +27,18 @@ public final class DeletedSkinArchive {
         if (gallery.entry(id).isEmpty()) {
             return Optional.empty();
         }
-        Path image = gallery.imageFile(id);
-        Optional<Path> copy = Files.isRegularFile(image)
-                ? Optional.of(copy(image, gallery.folder().getFileName() + "-" + id.value()))
-                : Optional.empty();
+        Optional<Path> copy = archive(gallery, id);
         gallery.remove(id);
         return copy;
+    }
+
+    /** Copies the entry's current image here and changes nothing else; empty if it has no image. */
+    public Optional<Path> archive(PlayerGallery gallery, SkinId id) throws IOException {
+        Path image = gallery.imageFile(id);
+        if (!Files.isRegularFile(image)) {
+            return Optional.empty();
+        }
+        return Optional.of(copy(image, gallery.folder().getFileName() + "-" + id.value()));
     }
 
     private Path copy(Path image, String baseName) throws IOException {

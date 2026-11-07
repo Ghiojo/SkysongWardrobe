@@ -55,6 +55,12 @@ class DeletedSkinArchiveTest {
     }
 
     @Test
+    void archiveOnlyCopies() throws IOException {
+        assertEquals(Optional.of(root.resolve("deleted").resolve("Steve-cape.png")), archive.archive(gallery, CAPE));
+        assertTrue(gallery.entry(CAPE).isPresent());
+    }
+
+    @Test
     void unknownIdChangesNothing() throws IOException {
         assertEquals(Optional.empty(), archive.delete(gallery, new SkinId("hood")));
         assertTrue(Files.notExists(root.resolve("deleted")));
