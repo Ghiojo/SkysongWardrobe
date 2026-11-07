@@ -10,6 +10,7 @@ import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.config.WardrobeSettings;
 import org.skysongdev.skysongwardrobe.download.SkinDownloader;
 import org.skysongdev.skysongwardrobe.download.SkinSource;
+import org.skysongdev.skysongwardrobe.gallery.DeletedSkinArchive;
 import org.skysongdev.skysongwardrobe.gallery.GalleryFolderListener;
 import org.skysongdev.skysongwardrobe.gallery.GalleryFolders;
 import org.skysongdev.skysongwardrobe.gallery.GalleryRepository;
@@ -57,7 +58,8 @@ public class SkysongWardrobe extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GalleryFolderListener(this, galleryFolders), this);
         galleries = new GalleryRepository(galleryFolders, getLogger());
 
-        SkinUploader uploader = new SkinUploader(galleries, () -> downloader(configuration.settings()),
+        DeletedSkinArchive archive = new DeletedSkinArchive(getDataFolder().toPath().resolve("deleted"));
+        SkinUploader uploader = new SkinUploader(galleries, archive, () -> downloader(configuration.settings()),
                 new DialogConfirmationPrompt(), configuration, new BukkitTaskRunner(this), Clock.systemUTC(), getLogger());
 
         WardrobeCommands commands = new WardrobeCommands(List.of(

@@ -90,6 +90,18 @@ class PlayerGalleryTest {
     }
 
     @Test
+    void replaceSwapsTheImageOfAnExistingEntry() throws IOException {
+        PlayerGallery gallery = PlayerGallery.load(folder, OWNER, LOGGER);
+        gallery.add(entry("cape"), PNG);
+
+        assertTrue(gallery.replace(entry("cape").withName("New"), new byte[] {9}));
+        assertFalse(gallery.replace(entry("hood"), new byte[] {9}));
+
+        assertArrayEquals(new byte[] {9}, Files.readAllBytes(gallery.imageFile(new SkinId("cape"))));
+        assertFalse(Files.exists(gallery.imageFile(new SkinId("hood"))));
+    }
+
+    @Test
     void removeKeepsTheImageSoWornItemsStillRender() throws IOException {
         PlayerGallery gallery = PlayerGallery.load(folder, OWNER, LOGGER);
         gallery.add(entry("cape"), PNG);

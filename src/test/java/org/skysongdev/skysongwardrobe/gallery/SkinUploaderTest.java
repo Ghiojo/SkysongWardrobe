@@ -57,7 +57,8 @@ class SkinUploaderTest {
             shown = text;
             (agree ? onAgree : onDecline).run();
         };
-        uploader = new SkinUploader(plugin.galleries(), () -> link -> {
+        uploader = new SkinUploader(plugin.galleries(),
+                new DeletedSkinArchive(plugin.getDataFolder().toPath().resolve("deleted")), () -> link -> {
             links.add(link);
             return nextDownload;
         }, prompt, plugin.configuration(), new ImmediateTaskRunner(), Clock.fixed(NOW, ZoneOffset.UTC),
@@ -130,6 +131,34 @@ class SkinUploaderTest {
             String message = nextMessage();
             assertFalse(message.contains("upload.failed"), failure + " has no text: " + message);
         }
+    }
+
+    @Test
+    void relinkArchivesTheOldImageAndKeepsNameAndIcon() throws IOException {
+        uploader.start(player, request(CAPE, "Red Cape"));
+        player.nextComponentMessage();
+        player.nextComponentMessage();
+        nextDownload = new DownloadResult.Success(new byte[] {7, 7});
+
+        uploader.relink(player, CAPE, URI.create("https://example.com/new.png"));
+
+        PlayerGallery gallery = plugin.galleries().existing(player.getUniqueId()).orElseThrow();
+        SkinEntry entry = gallery.entry(CAPE).orElseThrow();
+        assertEquals(URI.create("https://example.com/new.png"), entry.link());
+        assertEquals("Red Cape", entry.name());
+        assertArrayEquals(new byte[] {7, 7}, Files.readAllBytes(gallery.imageFile(CAPE)));
+        assertArrayEquals(PNG, Files.readAllBytes(plugin.getDataFolder().toPath().resolve("deleted/Alice-cape.png")));
+        assertTrue(plain(shown.body()).contains("https://example.com/new.png"));
+        player.nextComponentMessage();
+        assertTrue(nextMessage().contains("Replaced the image of cape"));
+    }
+
+    @Test
+    void relinkOfAnUnknownIdAsksNothing() {
+        uploader.relink(player, CAPE, URI.create("https://example.com/new.png"));
+
+        assertNull(shown);
+        assertEquals("[Wardrobe] Your gallery has no cape.", nextMessage());
     }
 
     private String nextMessage() {

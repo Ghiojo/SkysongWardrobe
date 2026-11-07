@@ -89,6 +89,17 @@ public final class PlayerGallery {
         return true;
     }
 
+    /** Swaps an entry's image and details for new ones; false if there is no entry with that id. */
+    public synchronized boolean replace(SkinEntry entry, byte[] png) throws IOException {
+        if (!entries.containsKey(entry.id())) {
+            return false;
+        }
+        Files.write(imageFile(entry.id()), png);
+        entries.put(entry.id(), entry);
+        save();
+        return true;
+    }
+
     /** Takes the entry out of the gallery but keeps its image file; false if there was none. */
     public synchronized boolean remove(SkinId id) throws IOException {
         if (entries.remove(id) == null) {

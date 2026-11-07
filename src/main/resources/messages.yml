@@ -26,6 +26,11 @@ upload:
     not-png: "<prefix> <red>That link is not a PNG image. Use a direct link to the .png file."
     wrong-size: "<prefix> <red>Skins must be 64x64 pixels."
 
+# Placeholders: <id>, <name>, <link>
+edit:
+  not-found: "<prefix> <red>Your gallery has no <white><id></white>."
+  link-done: "<prefix> <green>Replaced the image of <white><id></white>. The old one is kept in the deleted folder."
+
 reload:
   done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."
   layout-broken: "<prefix> <red>Reloaded, but wardrobe.yml has errors, so the wardrobe stays closed. The console lists them."
