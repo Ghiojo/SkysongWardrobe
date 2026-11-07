@@ -1,0 +1,26 @@
+# The /wardrobe menu: 54 positions (0 to 53, left to right, top to bottom).
+# Every position is the filler item, except the slots below. Run /sw reload after editing.
+
+title: "<dark_gray>Wardrobe"
+
+filler:
+  material: GRAY_STAINED_GLASS_PANE
+  name: " "
+
+# Each slot needs:
+#   position: where it sits in the menu (0 to 53), different for every slot
+#   accepts:  the wardrobe_type tag values an item needs to go in
+#   priority: the order its layers are drawn in; higher is drawn over lower, different for every slot
+slots:
+  coat:
+    position: 10
+    accepts: [coat]
+    priority: 30
+  gloves:
+    position: 19
+    accepts: [gloves]
+    priority: 20
+  boots:
+    position: 28
+    accepts: [boots]
+    priority: 10

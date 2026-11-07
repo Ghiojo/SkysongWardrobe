@@ -1,0 +1,4 @@
+# Every text players see, in MiniMessage format: https://docs.advntr.dev/minimessage/format.html
+# <prefix> is replaced by the prefix below. Run /sw reload after editing.
+
+prefix: "<dark_gray>[<gold>Wardrobe</gold>]</dark_gray>"
