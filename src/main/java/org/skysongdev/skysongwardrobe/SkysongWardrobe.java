@@ -26,6 +26,9 @@ import org.skysongdev.skysongwardrobe.gallery.SkinUploader;
 import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
 import org.skysongdev.skysongwardrobe.items.SkysongItemsTagGateway;
 import org.skysongdev.skysongwardrobe.items.TagRegistrationListener;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinMarker;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinRepository;
+import org.skysongdev.skysongwardrobe.mannequin.OrphanMannequinListener;
 import org.skysongdev.skysongwardrobe.menu.MenuListener;
 import org.skysongdev.skysongwardrobe.prompt.DialogConfirmationPrompt;
 import org.skysongdev.skysongwardrobe.render.BaseSkins;
@@ -74,6 +77,9 @@ public class SkysongWardrobe extends JavaPlugin {
     private GalleryRepository galleries;
     private WardrobeRepository wardrobes;
     private RenderQueue renderQueue;
+    private MannequinRepository mannequins;
+    private WardrobeRepository mannequinWardrobes;
+    private MannequinMarker mannequinMarker;
 
     @Override
     public void onEnable() {
@@ -112,6 +118,7 @@ public class SkysongWardrobe extends JavaPlugin {
         WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes, itemTags, configuration, getServer());
         getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobes, configuration, getServer(), getLogger()), this);
         getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer()), this);
+        loadMannequins();
         startRendering(itemTags);
         hookSkysongStats();
 
@@ -119,6 +126,16 @@ public class SkysongWardrobe extends JavaPlugin {
             commands.register(event.registrar());
             wardrobeCommand.register(event.registrar());
         });
+    }
+
+    /** Reads every placed mannequin and their wardrobes, and clears out mannequins broken earlier. */
+    private void loadMannequins() {
+        mannequins = MannequinRepository.load(getDataFolder().toPath().resolve("mannequins"), getLogger());
+        mannequinWardrobes = new WardrobeRepository(getDataFolder().toPath().resolve("mannequins").resolve("wardrobes"),
+                getLogger());
+        mannequinMarker = new MannequinMarker(this);
+        getServer().getPluginManager().registerEvents(
+                new OrphanMannequinListener(mannequins, mannequinMarker, getLogger()), this);
     }
 
     /** SkysongStats is optional; its API classes are only loaded when it is enabled. */
@@ -184,6 +201,21 @@ public class SkysongWardrobe extends JavaPlugin {
     /** The skins waiting for MineSkin. */
     public RenderQueue renderQueue() {
         return renderQueue;
+    }
+
+    /** Every placed mannequin. */
+    public MannequinRepository mannequins() {
+        return mannequins;
+    }
+
+    /** What each mannequin wears, keyed by the mannequin's id. */
+    public WardrobeRepository mannequinWardrobes() {
+        return mannequinWardrobes;
+    }
+
+    /** Tells this plugin's mannequin entities apart. */
+    public MannequinMarker mannequinMarker() {
+        return mannequinMarker;
     }
 
     /** One loaded gallery per player. */
