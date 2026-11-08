@@ -6,6 +6,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -41,4 +42,19 @@ public interface TextureCache {
 
     /** Stores a newly signed skin. A hash stored again keeps the newest texture. */
     void put(String hash, SignedTexture texture) throws IOException;
+
+    /**
+     * Stores every texture whose hash isn't stored yet, leaving the stored ones as they are, for
+     * importing another cache. Returns how many were added.
+     */
+    default int putAllIfAbsent(Map<String, SignedTexture> textures) throws IOException {
+        int added = 0;
+        for (Map.Entry<String, SignedTexture> entry : textures.entrySet()) {
+            if (find(entry.getKey()).isEmpty()) {
+                put(entry.getKey(), entry.getValue());
+                added++;
+            }
+        }
+        return added;
+    }
 }

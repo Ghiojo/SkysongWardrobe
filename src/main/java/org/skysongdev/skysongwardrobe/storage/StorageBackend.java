@@ -1,6 +1,10 @@
 package org.skysongdev.skysongwardrobe.storage;
 
 import org.skysongdev.skysongwardrobe.render.TextureCache;
+import org.skysongdev.skysongwardrobe.storage.importing.DatasetImporter;
+
+import java.nio.file.Path;
+import java.util.List;
 
 /**
  * Where all of SkysongWardrobe's stored data lives, picked once at start by {@code storage.type}.
@@ -11,6 +15,12 @@ public interface StorageBackend extends AutoCloseable {
 
     /** The signed skins. */
     TextureCache textures();
+
+    /**
+     * What {@code /sw storage import} copies from the YAML files in {@code dataFolder} into this
+     * backend; nothing for YAML itself.
+     */
+    List<DatasetImporter> importers(Path dataFolder);
 
     /** Releases the files or connections, when the plugin disables. */
     @Override

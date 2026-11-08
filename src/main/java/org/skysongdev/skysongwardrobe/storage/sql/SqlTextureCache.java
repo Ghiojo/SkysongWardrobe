@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.time.Clock;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -97,6 +98,49 @@ public final class SqlTextureCache implements TextureCache {
             upsert.executeUpdate();
         } catch (SQLException failed) {
             throw new IOException("Could not store a signed skin", failed);
+        }
+    }
+
+    /**
+     * One batch in one transaction, so thousands of imported skins take seconds, not minutes.
+     * The rows are counted before and after, since drivers may not report each insert's count.
+     */
+    @Override
+    public int putAllIfAbsent(Map<String, SignedTexture> textures) throws IOException {
+        List<String> columns = SqlDialect.concat(KEY, COLUMNS);
+        try (Connection connection = database.dataSource().getConnection()) {
+            connection.setAutoCommit(false);
+            try (PreparedStatement insert = connection.prepareStatement(database.dialect().insertIfAbsent(table, columns))) {
+                long before = count(connection);
+                long now = clock.millis();
+                for (Map.Entry<String, SignedTexture> entry : textures.entrySet()) {
+                    insert.setString(1, entry.getKey());
+                    insert.setString(2, entry.getValue().value());
+                    insert.setString(3, entry.getValue().signature());
+                    insert.setString(4, valueHash(entry.getValue().value()));
+                    insert.setLong(5, now);
+                    insert.addBatch();
+                }
+                insert.executeBatch();
+                int added = (int) (count(connection) - before);
+                connection.commit();
+                return added;
+            } catch (SQLException failed) {
+                connection.rollback();
+                throw failed;
+            } finally {
+                connection.setAutoCommit(true);
+            }
+        } catch (SQLException failed) {
+            throw new IOException("Could not import the signed skins", failed);
+        }
+    }
+
+    private long count(Connection connection) throws SQLException {
+        try (PreparedStatement select = connection.prepareStatement("SELECT COUNT(*) FROM " + table);
+             ResultSet result = select.executeQuery()) {
+            result.next();
+            return result.getLong(1);
         }
     }
 

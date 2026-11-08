@@ -2,8 +2,13 @@ package org.skysongdev.skysongwardrobe.storage.sql;
 
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.storage.StorageBackend;
+import org.skysongdev.skysongwardrobe.storage.YamlStorage;
+import org.skysongdev.skysongwardrobe.storage.importing.DatasetImporter;
+import org.skysongdev.skysongwardrobe.storage.importing.TextureImporter;
 
+import java.nio.file.Path;
 import java.time.Clock;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -24,6 +29,11 @@ public final class SqlStorage implements StorageBackend {
     @Override
     public TextureCache textures() {
         return textures;
+    }
+
+    @Override
+    public List<DatasetImporter> importers(Path dataFolder) {
+        return List.of(new TextureImporter(dataFolder.resolve(YamlStorage.TEXTURE_FILE), textures));
     }
 
     @Override

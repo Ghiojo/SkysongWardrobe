@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -72,6 +73,20 @@ public abstract class TextureCacheContract {
         assertEquals(Optional.of(new SignedTexture("value7", "signature7")), cache.find("hash7"));
         assertEquals(Optional.of(new SignedTexture("value49", "signature49")), cache.find("hash49"));
         assertTrue(cache.isOwn(new SignedTexture("value23", "signature23")));
+    }
+
+    @Test
+    public void putAllIfAbsentAddsOnlyTheNewHashes() throws IOException {
+        cache.put("abc", SIGNED);
+
+        int added = cache.putAllIfAbsent(Map.of(
+                "abc", new SignedTexture("replaced", "replaced"),
+                "def", new SignedTexture("new", "new")));
+
+        assertEquals(1, added);
+        assertEquals(Optional.of(SIGNED), cache.find("abc"));
+        assertEquals(Optional.of(new SignedTexture("new", "new")), cache.find("def"));
+        assertTrue(cache.isOwn(new SignedTexture("new", "new")));
     }
 
     @Test

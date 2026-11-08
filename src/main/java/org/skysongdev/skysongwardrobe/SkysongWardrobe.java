@@ -9,6 +9,7 @@ import org.skysongdev.skysongwardrobe.commands.DeleteCommand;
 import org.skysongdev.skysongwardrobe.commands.EditCommand;
 import org.skysongdev.skysongwardrobe.commands.GalleryCommand;
 import org.skysongdev.skysongwardrobe.commands.ReloadCommand;
+import org.skysongdev.skysongwardrobe.commands.StorageImportCommand;
 import org.skysongdev.skysongwardrobe.commands.SubCommand;
 import org.skysongdev.skysongwardrobe.commands.UnapplyCommand;
 import org.skysongdev.skysongwardrobe.commands.UploadCommand;
@@ -163,6 +164,8 @@ public class SkysongWardrobe extends JavaPlugin {
 
         List<SubCommand> subCommands = new ArrayList<>(List.of(
                 new ReloadCommand(configuration),
+                new StorageImportCommand(storage.importers(getDataFolder().toPath()), configuration,
+                        new BukkitTaskRunner(this), getLogger()),
                 new UploadCommand(uploader, configuration),
                 new EditCommand(galleries, uploader, configuration, getLogger()),
                 new DeleteCommand(galleries, archive, configuration, getLogger()),
