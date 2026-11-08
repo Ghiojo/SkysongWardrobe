@@ -60,6 +60,7 @@ import org.skysongdev.skysongwardrobe.render.RenderTrigger;
 import org.skysongdev.skysongwardrobe.render.SkinApplier;
 import org.skysongdev.skysongwardrobe.render.SkinRenderer;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
+import org.skysongdev.skysongwardrobe.render.YamlTextureCache;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
 import org.skysongdev.skysongwardrobe.stats.SkysongStatsHook;
@@ -254,7 +255,7 @@ public class SkysongWardrobe extends JavaPlugin {
      */
     private OutfitRenderer startRendering(Supplier<ItemTagGateway> itemTags) {
         BukkitTaskRunner tasks = new BukkitTaskRunner(this);
-        TextureCache cache = TextureCache.load(getDataFolder().toPath().resolve("texture-cache.yml"));
+        TextureCache cache = YamlTextureCache.load(getDataFolder().toPath().resolve("texture-cache.yml"));
         textureCache = cache;
         BaseSkins bases = new BaseSkins(cache, new HttpImageFetcher(BASE_SKIN_TIMEOUT),
                 () -> configuration.settings().verbose(), getLogger());

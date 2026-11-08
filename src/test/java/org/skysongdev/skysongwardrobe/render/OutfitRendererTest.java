@@ -44,7 +44,7 @@ class OutfitRendererTest {
 
     @BeforeEach
     void setUp() {
-        cache = TextureCache.load(folder.resolve("texture-cache.yml"));
+        cache = YamlTextureCache.load(folder.resolve("texture-cache.yml"));
         queue = RenderQueue.load(folder.resolve("render-queue.yml"), (skin, arms) -> new SignResult.Signed(SIGNED),
                 cache, () -> Duration.ZERO, Clock.systemUTC(), new RenderRouter(), Logger.getLogger("test"));
         outfits = new OutfitRenderer(() -> tags, layers, cache, queue, () -> hasKey);

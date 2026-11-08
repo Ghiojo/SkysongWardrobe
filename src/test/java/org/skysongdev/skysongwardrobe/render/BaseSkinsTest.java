@@ -31,7 +31,7 @@ class BaseSkinsTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        TextureCache cache = TextureCache.load(folder.resolve("cache.yml"));
+        TextureCache cache = YamlTextureCache.load(folder.resolve("cache.yml"));
         cache.put("hash", OURS);
         bases = new BaseSkins(cache, uri -> {
             fetched.add(uri);

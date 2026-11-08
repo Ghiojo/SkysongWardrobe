@@ -23,6 +23,7 @@ import org.skysongdev.skysongwardrobe.render.RenderQueue;
 import org.skysongdev.skysongwardrobe.render.SignResult;
 import org.skysongdev.skysongwardrobe.render.SignedTexture;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
+import org.skysongdev.skysongwardrobe.render.YamlTextureCache;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.scheduling.TrackingTaskRunner;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
@@ -76,7 +77,7 @@ class NpcRendererTest {
         plugin.configuration().reload();
         editor = server.addPlayer();
 
-        TextureCache cache = TextureCache.load(folder.resolve("texture-cache.yml"));
+        TextureCache cache = YamlTextureCache.load(folder.resolve("texture-cache.yml"));
         TrackingTaskRunner tasks = new TrackingTaskRunner();
         NpcSkinApplier applier = new NpcSkinApplier(skins, tasks);
         queue = RenderQueue.load(folder.resolve("render-queue.yml"), (skin, arms) -> new SignResult.Signed(SIGNED), cache,

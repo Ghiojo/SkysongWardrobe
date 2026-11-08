@@ -38,7 +38,7 @@ class RenderQueueTest {
 
     @BeforeEach
     void setUp() {
-        cache = TextureCache.load(folder.resolve("texture-cache.yml"));
+        cache = YamlTextureCache.load(folder.resolve("texture-cache.yml"));
         queue = load();
     }
 

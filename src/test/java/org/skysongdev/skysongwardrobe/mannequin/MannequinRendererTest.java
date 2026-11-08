@@ -21,6 +21,7 @@ import org.skysongdev.skysongwardrobe.render.RenderRouter;
 import org.skysongdev.skysongwardrobe.render.SignResult;
 import org.skysongdev.skysongwardrobe.render.SignedTexture;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
+import org.skysongdev.skysongwardrobe.render.YamlTextureCache;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.scheduling.TrackingTaskRunner;
 import org.skysongdev.skysongwardrobe.wardrobe.Wardrobe;
@@ -74,7 +75,7 @@ class MannequinRendererTest {
 
         mannequins = MannequinRepository.load(folder.resolve("mannequins"), Logger.getAnonymousLogger());
         wardrobes = new WardrobeRepository(folder.resolve("wardrobes"), Logger.getAnonymousLogger());
-        TextureCache cache = TextureCache.load(folder.resolve("texture-cache.yml"));
+        TextureCache cache = YamlTextureCache.load(folder.resolve("texture-cache.yml"));
         queue = RenderQueue.load(folder.resolve("render-queue.yml"), (skin, arms) -> new SignResult.Signed(SIGNED), cache,
                 () -> Duration.ZERO, Clock.systemUTC(), new RenderRouter(), Logger.getAnonymousLogger());
         TrackingTaskRunner tasks = new TrackingTaskRunner();

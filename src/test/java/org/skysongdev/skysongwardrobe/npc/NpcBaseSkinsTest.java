@@ -8,6 +8,7 @@ import org.skysongdev.skysongwardrobe.render.BaseSkin;
 import org.skysongdev.skysongwardrobe.render.BaseSkins;
 import org.skysongdev.skysongwardrobe.render.SignedTexture;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
+import org.skysongdev.skysongwardrobe.render.YamlTextureCache;
 
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -38,7 +39,7 @@ class NpcBaseSkinsTest {
 
     @BeforeEach
     void setUp() throws IOException {
-        cache = TextureCache.load(folder.resolve("cache.yml"));
+        cache = YamlTextureCache.load(folder.resolve("cache.yml"));
         cache.put("hash", OURS);
         records = new NpcRepository(folder.resolve("npcs"), Logger.getAnonymousLogger());
         bases = create();
