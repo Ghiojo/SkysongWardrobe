@@ -1,13 +1,11 @@
 package org.skysongdev.skysongwardrobe.mannequin;
 
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.skysongdev.skysongwardrobe.render.ArmModel;
+import org.skysongdev.skysongwardrobe.storage.StorageException;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -15,32 +13,47 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 /**
- * Saves mannequins to {@code mannequins/<uuid>.yml}, the spawner as Paper's serialized item bytes
- * in Base64. Every file is read at start, so lookups and per-player counts need no disk access.
- * A file that can't be read is left untouched and its id remembered, so its entity is never
- * treated as an orphan and nothing in it is lost.
+ * Every mannequin, read from a {@link MannequinStore} at start, so lookups and per-player counts
+ * never wait on the store. A record that can't be read is left untouched and its id remembered,
+ * so its entity is never treated as an orphan and nothing in it is lost.
  */
 public final class MannequinRepository {
-    private static final String SUFFIX = ".yml";
-
-    private final Path folder;
-    private final Logger logger;
+    private final MannequinStore store;
     private final Map<UUID, Mannequin> mannequins = new HashMap<>();
     private final Set<UUID> unreadable = new HashSet<>();
 
-    private MannequinRepository(Path folder, Logger logger) {
-        this.folder = folder;
-        this.logger = logger;
+    private MannequinRepository(MannequinStore store) {
+        this.store = store;
     }
 
-    /** A repository holding every mannequin saved in {@code folder}. */
-    public static MannequinRepository load(Path folder, Logger logger) {
-        MannequinRepository repository = new MannequinRepository(folder, logger);
-        repository.readAll();
+    /** A repository holding every mannequin saved in the store. */
+    public static MannequinRepository load(MannequinStore store, Logger logger) {
+        MannequinRepository repository = new MannequinRepository(store);
+        MannequinStore.Contents contents;
+        try {
+            contents = store.readAll();
+        } catch (IOException failed) {
+            throw new StorageException("Could not read the mannequins", failed);
+        }
+        repository.unreadable.addAll(contents.unreadable());
+        for (MannequinStore.Row row : contents.rows()) {
+            try {
+                repository.mannequins.put(row.id(), new Mannequin(row.id(), row.owner(),
+                        ItemStack.deserializeBytes(row.spawner()), row.skin(), ArmModel.valueOf(row.model())));
+            } catch (RuntimeException broken) {
+                logger.warning("Mannequin " + row.id() + " can't be read, so its record is kept untouched and its"
+                        + " mannequin left alone: " + broken.getMessage());
+                repository.unreadable.add(row.id());
+            }
+        }
         return repository;
+    }
+
+    /** A repository holding every mannequin saved as YAML in {@code folder}. */
+    public static MannequinRepository load(Path folder, Logger logger) {
+        return load(new YamlMannequinStore(folder, logger), logger);
     }
 
     public synchronized Optional<Mannequin> find(UUID id) {
@@ -57,55 +70,16 @@ public final class MannequinRepository {
         return (int) mannequins.values().stream().filter(mannequin -> mannequin.owner().equals(owner)).count();
     }
 
+    /** Saves the mannequin; it counts as placed only once the store has it. */
     public synchronized void save(Mannequin mannequin) throws IOException {
-        YamlConfiguration file = new YamlConfiguration();
-        file.set("owner", mannequin.owner().toString());
-        file.set("skin", mannequin.skin());
-        file.set("model", mannequin.model().name());
-        file.set("spawner", Base64.getEncoder().encodeToString(mannequin.spawner().serializeAsBytes()));
-        Files.createDirectories(folder);
-        file.save(file(mannequin.id()).toFile());
+        store.write(new MannequinStore.Row(mannequin.id(), mannequin.owner(), mannequin.skin(), mannequin.model().name(),
+                mannequin.spawner().serializeAsBytes()));
         mannequins.put(mannequin.id(), mannequin);
     }
 
     public synchronized void delete(UUID id) throws IOException {
-        Files.deleteIfExists(file(id));
+        store.delete(id);
         mannequins.remove(id);
         unreadable.remove(id);
-    }
-
-    private void readAll() {
-        if (!Files.isDirectory(folder)) {
-            return;
-        }
-        try (Stream<Path> files = Files.list(folder)) {
-            files.filter(path -> path.getFileName().toString().endsWith(SUFFIX)).forEach(this::read);
-        } catch (IOException broken) {
-            logger.severe("Could not list " + folder + ": " + broken.getMessage());
-        }
-    }
-
-    private void read(Path path) {
-        String name = path.getFileName().toString();
-        UUID id;
-        try {
-            id = UUID.fromString(name.substring(0, name.length() - SUFFIX.length()));
-        } catch (IllegalArgumentException notOurs) {
-            return;
-        }
-        try {
-            YamlConfiguration file = YamlConfiguration.loadConfiguration(path.toFile());
-            ItemStack spawner = ItemStack.deserializeBytes(Base64.getDecoder().decode(file.getString("spawner", "")));
-            mannequins.put(id, new Mannequin(id, UUID.fromString(file.getString("owner", "")), spawner,
-                    file.getString("skin", ""), ArmModel.valueOf(file.getString("model", ""))));
-        } catch (RuntimeException broken) {
-            logger.warning(path + " can't be read, so it is kept untouched and its mannequin left alone: "
-                    + broken.getMessage());
-            unreadable.add(id);
-        }
-    }
-
-    private Path file(UUID id) {
-        return folder.resolve(id + SUFFIX);
     }
 }
