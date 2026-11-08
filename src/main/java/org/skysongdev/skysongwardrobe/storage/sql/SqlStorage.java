@@ -2,11 +2,13 @@ package org.skysongdev.skysongwardrobe.storage.sql;
 
 import org.skysongdev.skysongwardrobe.mannequin.MannequinStore;
 import org.skysongdev.skysongwardrobe.mannequin.YamlMannequinStore;
+import org.skysongdev.skysongwardrobe.npc.NpcRecordStore;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.storage.StorageBackend;
 import org.skysongdev.skysongwardrobe.storage.YamlStorage;
 import org.skysongdev.skysongwardrobe.storage.importing.DatasetImporter;
 import org.skysongdev.skysongwardrobe.storage.importing.MannequinImporter;
+import org.skysongdev.skysongwardrobe.storage.importing.NpcRecordImporter;
 import org.skysongdev.skysongwardrobe.storage.importing.TextureImporter;
 import org.skysongdev.skysongwardrobe.storage.importing.WardrobeImporter;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
@@ -52,6 +54,11 @@ public final class SqlStorage implements StorageBackend {
     }
 
     @Override
+    public NpcRecordStore npcRecords() {
+        return new SqlNpcRecordStore(database);
+    }
+
+    @Override
     public List<DatasetImporter> importers(Path dataFolder) {
         return List.of(
                 new TextureImporter(dataFolder.resolve(YamlStorage.TEXTURE_FILE), textures),
@@ -59,7 +66,8 @@ public final class SqlStorage implements StorageBackend {
                 wardrobeImporter(WardrobeKind.MANNEQUIN, dataFolder),
                 wardrobeImporter(WardrobeKind.NPC, dataFolder),
                 new MannequinImporter(new YamlMannequinStore(YamlStorage.mannequinFolder(dataFolder), logger),
-                        mannequins()));
+                        mannequins()),
+                new NpcRecordImporter(YamlStorage.npcFolder(dataFolder), npcRecords(), logger));
     }
 
     private DatasetImporter wardrobeImporter(WardrobeKind kind, Path dataFolder) {

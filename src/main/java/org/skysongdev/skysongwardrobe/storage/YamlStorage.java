@@ -2,6 +2,8 @@ package org.skysongdev.skysongwardrobe.storage;
 
 import org.skysongdev.skysongwardrobe.mannequin.MannequinStore;
 import org.skysongdev.skysongwardrobe.mannequin.YamlMannequinStore;
+import org.skysongdev.skysongwardrobe.npc.NpcRecordStore;
+import org.skysongdev.skysongwardrobe.npc.YamlNpcRecordStore;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.render.YamlTextureCache;
 
@@ -51,6 +53,15 @@ public final class YamlStorage implements StorageBackend {
     @Override
     public MannequinStore mannequins() {
         return new YamlMannequinStore(mannequinFolder(dataFolder), logger);
+    }
+
+    @Override
+    public NpcRecordStore npcRecords() {
+        return new YamlNpcRecordStore(npcFolder(dataFolder), logger);
+    }
+
+    public static Path npcFolder(Path dataFolder) {
+        return dataFolder.resolve("npcs");
     }
 
     public static Path mannequinFolder(Path dataFolder) {
