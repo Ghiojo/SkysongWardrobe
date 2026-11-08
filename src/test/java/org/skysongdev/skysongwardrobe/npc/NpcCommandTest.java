@@ -78,7 +78,7 @@ class NpcCommandTest {
         WardrobeRepository wardrobes = new WardrobeRepository(folder, Logger.getAnonymousLogger());
         NpcAccess access = NpcAccess.standard(() -> plugin.configuration().settings().npcPermissions());
         commands = new CommandRunner(new NpcCommand(directory, skins, access, wardrobes, FakeItemTags::new,
-                plugin.configuration(), server));
+                plugin.configuration(), server, new NpcArchive(folder.resolve("removed"), Logger.getAnonymousLogger())));
     }
 
     @AfterEach
@@ -157,6 +157,26 @@ class NpcCommandTest {
         PlayerMock nobody = server.addPlayer();
 
         assertThrows(CommandSyntaxException.class, () -> commands.run(nobody, "npc 7"));
+    }
+
+    @Test
+    void staffOpenTheRemovedNpcsMenu() throws CommandSyntaxException, java.io.IOException {
+        PlayerMock staff = server.addPlayer();
+        staff.addAttachment(plugin, "skysongwardrobe.npc.other", true);
+        commands.run(staff, "npc removed");
+        assertEquals("[Wardrobe] No removed NPC has items left in its wardrobe.", actionBar(staff));
+
+        org.skysongdev.skysongwardrobe.wardrobe.Wardrobe worn = new org.skysongdev.skysongwardrobe.wardrobe.Wardrobe(baker.id());
+        worn.put("coat", new org.bukkit.inventory.ItemStack(org.bukkit.Material.LEATHER_CHESTPLATE));
+        new NpcArchive(folder.resolve("removed"), Logger.getAnonymousLogger()).store(baker, worn, java.time.Instant.now());
+        commands.run(staff, "npc removed");
+
+        assertTrue(staff.getOpenInventory().getTopInventory().getHolder() instanceof RemovedNpcsMenu);
+    }
+
+    @Test
+    void ownersCantOpenTheRemovedNpcsMenu() {
+        assertThrows(CommandSyntaxException.class, () -> commands.run(owner, "npc removed"));
     }
 
     private boolean looksAtBaker(PlayerMock player) {
