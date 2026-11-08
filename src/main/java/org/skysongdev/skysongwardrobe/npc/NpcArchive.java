@@ -1,39 +1,38 @@
 package org.skysongdev.skysongwardrobe.npc;
 
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.skysongdev.skysongwardrobe.wardrobe.Wardrobe;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
 /**
- * Keeps the wardrobes of removed NPCs in {@code npcs/removed/}, so their items are never lost.
- * Each removal gets its own entry id: {@code <entry>.yml} is a normal wardrobe file, so it opens
- * like any other, and {@code <entry>.info.yml} says which NPC it was and when it went.
+ * Keeps the wardrobes of removed NPCs, so their items are never lost. Each removal gets its own
+ * entry id: its items are a normal wardrobe under that id, so it opens like any other, and the
+ * {@link RemovedNpcStore} says which NPC it was and when it went.
  */
 public final class NpcArchive {
-    static final String INFO_SUFFIX = ".info.yml";
-
-    private final Path folder;
-    private final Logger logger;
+    private final RemovedNpcStore entries;
     private final WardrobeRepository wardrobes;
+    private final Logger logger;
 
-    public NpcArchive(Path folder, Logger logger) {
-        this.folder = folder;
+    public NpcArchive(RemovedNpcStore entries, WardrobeRepository wardrobes, Logger logger) {
+        this.entries = entries;
+        this.wardrobes = wardrobes;
         this.logger = logger;
-        this.wardrobes = new WardrobeRepository(folder, logger);
+    }
+
+    /** The archive in {@code folder}: wardrobe files beside their {@code <entry>.info.yml}. */
+    public NpcArchive(Path folder, Logger logger) {
+        this(new YamlRemovedNpcStore(folder, logger), new WardrobeRepository(folder, logger), logger);
     }
 
     /** Stores a copy of the wardrobe of {@code npc}, removed at {@code when}; returns the new entry's id. */
@@ -42,12 +41,7 @@ public final class NpcArchive {
         Wardrobe copy = wardrobes.load(entry);
         wardrobe.items().forEach(copy::put);
         await(wardrobes.save(copy));
-        YamlConfiguration info = new YamlConfiguration();
-        info.set("npc", npc.id().toString());
-        info.set("number", npc.number());
-        info.set("name", npc.name());
-        info.set("removed-at", when.toString());
-        info.save(info(entry).toFile());
+        entries.write(new RemovedNpc(entry, npc.id(), npc.number(), npc.name(), when));
         return entry;
     }
 
@@ -56,18 +50,14 @@ public final class NpcArchive {
         return wardrobes;
     }
 
-    /** Every archived wardrobe, newest removal first. An entry whose info can't be read is skipped and kept. */
+    /** Every archived wardrobe, newest removal first. An entry that can't be read is skipped and kept. */
     public List<RemovedNpc> list() {
-        if (!Files.isDirectory(folder)) {
-            return List.of();
-        }
-        try (Stream<Path> files = Files.list(folder)) {
-            return files.filter(path -> path.getFileName().toString().endsWith(INFO_SUFFIX))
-                    .flatMap(path -> read(path).stream())
+        try {
+            return entries.readAll().stream()
                     .sorted(Comparator.comparing(RemovedNpc::removedAt).reversed())
                     .toList();
         } catch (IOException failed) {
-            logger.log(Level.WARNING, "Could not list " + folder + ".", failed);
+            logger.log(Level.WARNING, "Could not list the removed NPCs.", failed);
             return List.of();
         }
     }
@@ -76,20 +66,7 @@ public final class NpcArchive {
     public void discardIfEmpty(UUID entry) throws IOException {
         if (wardrobes.load(entry).items().isEmpty()) {
             await(wardrobes.delete(entry));
-            Files.deleteIfExists(info(entry));
-        }
-    }
-
-    private Optional<RemovedNpc> read(Path path) {
-        String name = path.getFileName().toString();
-        try {
-            UUID entry = UUID.fromString(name.substring(0, name.length() - INFO_SUFFIX.length()));
-            YamlConfiguration info = YamlConfiguration.loadConfiguration(path.toFile());
-            return Optional.of(new RemovedNpc(entry, UUID.fromString(info.getString("npc", "")), info.getInt("number"),
-                    info.getString("name", "?"), Instant.parse(info.getString("removed-at", ""))));
-        } catch (RuntimeException broken) {
-            logger.warning(path + " can't be read, so it is left alone: " + broken.getMessage());
-            return Optional.empty();
+            entries.delete(entry);
         }
     }
 
@@ -100,9 +77,5 @@ public final class NpcArchive {
         } catch (CompletionException failed) {
             throw failed.getCause() instanceof IOException io ? io : new IOException(failed.getCause());
         }
-    }
-
-    Path info(UUID entry) {
-        return folder.resolve(entry + INFO_SUFFIX);
     }
 }

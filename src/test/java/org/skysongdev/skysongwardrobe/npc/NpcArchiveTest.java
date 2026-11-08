@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockbukkit.mockbukkit.MockBukkit;
 import org.skysongdev.skysongwardrobe.wardrobe.Wardrobe;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -75,7 +76,7 @@ class NpcArchiveTest {
 
     @Test
     void anUnreadableEntryIsSkippedAndKept() throws IOException {
-        Path broken = folder.resolve(UUID.randomUUID() + NpcArchive.INFO_SUFFIX);
+        Path broken = folder.resolve(UUID.randomUUID() + YamlRemovedNpcStore.INFO_SUFFIX);
         Files.createDirectories(folder);
         Files.writeString(broken, "name: Ghost\n");
 
@@ -86,5 +87,26 @@ class NpcArchiveTest {
     @Test
     void noFolderMeansNoEntries() {
         assertTrue(new NpcArchive(folder.resolve("missing"), Logger.getAnonymousLogger()).list().isEmpty());
+    }
+
+    @Test
+    void aStoreThatCantBeReadListsNothing() {
+        RemovedNpcStore failing = new RemovedNpcStore() {
+            @Override
+            public List<RemovedNpc> readAll() throws IOException {
+                throw new IOException("database down");
+            }
+
+            @Override
+            public void write(RemovedNpc entry) {
+            }
+
+            @Override
+            public void delete(UUID entry) {
+            }
+        };
+
+        assertTrue(new NpcArchive(failing, new WardrobeRepository(folder, Logger.getAnonymousLogger()),
+                Logger.getAnonymousLogger()).list().isEmpty());
     }
 }

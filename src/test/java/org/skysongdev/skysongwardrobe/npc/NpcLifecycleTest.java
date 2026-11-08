@@ -77,7 +77,7 @@ class NpcLifecycleTest {
         Path removed = folder.resolve("npcs/removed");
         Path infoFile;
         try (var files = Files.list(removed)) {
-            infoFile = files.filter(path -> path.toString().endsWith(NpcArchive.INFO_SUFFIX)).findFirst().orElseThrow();
+            infoFile = files.filter(path -> path.toString().endsWith(YamlRemovedNpcStore.INFO_SUFFIX)).findFirst().orElseThrow();
         }
         YamlConfiguration info = YamlConfiguration.loadConfiguration(infoFile.toFile());
         assertEquals(baker.id().toString(), info.getString("npc"));
@@ -85,7 +85,7 @@ class NpcLifecycleTest {
         assertEquals(7, info.getInt("number"));
         assertEquals(NOW.toString(), info.getString("removed-at"));
         String name = infoFile.getFileName().toString();
-        UUID entry = UUID.fromString(name.substring(0, name.length() - NpcArchive.INFO_SUFFIX.length()));
+        UUID entry = UUID.fromString(name.substring(0, name.length() - YamlRemovedNpcStore.INFO_SUFFIX.length()));
         assertEquals(Material.LEATHER_CHESTPLATE, new WardrobeRepository(removed, Logger.getAnonymousLogger())
                 .load(entry).item("coat").orElseThrow().getType());
     }
