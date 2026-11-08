@@ -189,6 +189,25 @@ class RenderQueueTest {
     }
 
     @Test
+    void anNpcGoesBeforeAMannequinButAfterAPlayer() {
+        answers.add(new SignResult.Signed(SIGNED));
+        answers.add(new SignResult.Signed(SIGNED));
+        answers.add(new SignResult.Signed(SIGNED));
+        UUID npc = UUID.randomUUID();
+        RenderJob mannequin = job(BEA, 2);
+        RenderJob citizen = job(npc, 3);
+        queue.submit(new RenderJob(BEA, WearerKind.MANNEQUIN, mannequin.skin(), ArmModel.CLASSIC, mannequin.hash()));
+        queue.submit(new RenderJob(npc, WearerKind.NPC, citizen.skin(), ArmModel.CLASSIC, citizen.hash()));
+        queue.submit(job(ALEX, 1));
+
+        queue.runNext();
+        queue.runNext();
+        queue.runNext();
+
+        assertEquals(List.of("signed " + ALEX + " value", "signed " + npc + " value", "signed " + BEA + " value"), heard);
+    }
+
+    @Test
     void aMannequinRunsWhenNoPlayerIsReady() {
         answers.add(new SignResult.Signed(SIGNED));
         answers.add(new SignResult.Signed(SIGNED));

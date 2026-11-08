@@ -52,7 +52,7 @@ class WardrobeKindsTest {
         PlayerMock owner = server.addPlayer();
 
         WardrobeKinds.of(players, mannequins, server).get(WardrobeKind.PLAYER).orElseThrow()
-                .changed().accept(owner.getUniqueId());
+                .changed().accept(owner.getUniqueId(), owner);
 
         server.getPluginManager().assertEventFired(WardrobeUpdateEvent.class, event -> event.getPlayer() == owner);
     }
@@ -60,7 +60,7 @@ class WardrobeKindsTest {
     @Test
     void anOfflineOwnerGetsNoEvent() {
         WardrobeKinds.of(players, mannequins, server).get(WardrobeKind.PLAYER).orElseThrow()
-                .changed().accept(UUID.randomUUID());
+                .changed().accept(UUID.randomUUID(), server.addPlayer());
 
         server.getPluginManager().assertEventNotFired(WardrobeUpdateEvent.class);
     }
@@ -70,7 +70,7 @@ class WardrobeKindsTest {
         UUID mannequin = UUID.randomUUID();
 
         WardrobeKinds.of(players, mannequins, server).get(WardrobeKind.MANNEQUIN).orElseThrow()
-                .changed().accept(mannequin);
+                .changed().accept(mannequin, server.addPlayer());
 
         server.getPluginManager().assertEventFired(MannequinUpdateEvent.class,
                 event -> event.getMannequin().equals(mannequin));
@@ -79,14 +79,16 @@ class WardrobeKindsTest {
     @Test
     void aNewKindRegistersItsOwnStorageAndHandler() {
         WardrobeRepository npcs = new WardrobeRepository(folder.resolve("npcs"), Logger.getAnonymousLogger());
-        List<UUID> changed = new ArrayList<>();
+        List<String> changed = new ArrayList<>();
         UUID npc = UUID.randomUUID();
+        PlayerMock editor = server.addPlayer();
 
-        WardrobeKinds kinds = WardrobeKinds.of(players, mannequins, server).register(WardrobeKind.NPC, npcs, changed::add);
-        kinds.get(WardrobeKind.NPC).orElseThrow().changed().accept(npc);
+        WardrobeKinds kinds = WardrobeKinds.of(players, mannequins, server)
+                .register(WardrobeKind.NPC, npcs, (wearer, by) -> changed.add(wearer + " by " + by.getName()));
+        kinds.get(WardrobeKind.NPC).orElseThrow().changed().accept(npc, editor);
 
         assertSame(npcs, kinds.get(WardrobeKind.NPC).orElseThrow().wardrobes());
-        assertEquals(List.of(npc), changed);
+        assertEquals(List.of(npc + " by " + editor.getName()), changed);
     }
 
     @Test
