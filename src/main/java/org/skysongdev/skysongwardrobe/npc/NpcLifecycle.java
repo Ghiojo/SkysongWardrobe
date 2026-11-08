@@ -47,8 +47,8 @@ public final class NpcLifecycle {
         Wardrobe wardrobe = wardrobes.load(npc.id());
         try {
             if (!wardrobe.items().isEmpty()) {
-                logger.info("NPC " + npc.name() + " (" + npc.number() + ") was removed; its wardrobe is kept in "
-                        + archive.store(npc, wardrobe, clock.instant()) + ".");
+                logger.info("NPC " + npc.name() + " (" + npc.number() + ") was removed; its wardrobe is kept as removed"
+                        + " entry " + archive.store(npc, wardrobe, clock.instant()) + ", see /sw npc removed.");
             }
             wardrobes.delete(npc.id());
             records.delete(npc.id());
