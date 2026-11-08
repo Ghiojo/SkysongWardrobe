@@ -17,7 +17,7 @@ class YamlTextureCacheTest extends TextureCacheContract {
     Path folder;
 
     @Override
-    TextureCache emptyCache() {
+    protected TextureCache emptyCache() {
         return YamlTextureCache.load(folder.resolve("texture-cache.yml"));
     }
 

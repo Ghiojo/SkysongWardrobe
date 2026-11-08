@@ -14,29 +14,30 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * What every {@link TextureCache} must do, whatever it stores the skins in. Each implementation's
- * test extends this, so they all behave the same.
+ * test extends this, so they all behave the same. Public, so the SQL caches' tests in other
+ * packages extend it too.
  */
-abstract class TextureCacheContract {
-    static final SignedTexture SIGNED = new SignedTexture("value", "signature");
+public abstract class TextureCacheContract {
+    protected static final SignedTexture SIGNED = new SignedTexture("value", "signature");
 
     private TextureCache cache;
 
     /** A cache with nothing in it yet. */
-    abstract TextureCache emptyCache() throws IOException;
+    protected abstract TextureCache emptyCache() throws IOException;
 
     @BeforeEach
-    void createCache() throws IOException {
+    public void createCache() throws IOException {
         cache = emptyCache();
     }
 
     @Test
-    void anEmptyCacheFindsNothing() {
+    public void anEmptyCacheFindsNothing() {
         assertEquals(Optional.empty(), cache.find("abc"));
         assertFalse(cache.isOwn(SIGNED));
     }
 
     @Test
-    void aStoredTextureIsFoundByItsHash() throws IOException {
+    public void aStoredTextureIsFoundByItsHash() throws IOException {
         cache.put("abc", SIGNED);
 
         assertEquals(Optional.of(SIGNED), cache.find("abc"));
@@ -44,7 +45,7 @@ abstract class TextureCacheContract {
     }
 
     @Test
-    void aStoredTextureIsOwnAndOthersAreNot() throws IOException {
+    public void aStoredTextureIsOwnAndOthersAreNot() throws IOException {
         cache.put("abc", SIGNED);
 
         assertTrue(cache.isOwn(SIGNED));
@@ -53,7 +54,7 @@ abstract class TextureCacheContract {
     }
 
     @Test
-    void storingAHashAgainKeepsTheNewestTexture() throws IOException {
+    public void storingAHashAgainKeepsTheNewestTexture() throws IOException {
         SignedTexture newer = new SignedTexture("newer", "newer signature");
         cache.put("abc", SIGNED);
         cache.put("abc", newer);
@@ -63,7 +64,7 @@ abstract class TextureCacheContract {
     }
 
     @Test
-    void manyTexturesAreKeptApart() throws IOException {
+    public void manyTexturesAreKeptApart() throws IOException {
         for (int i = 0; i < 50; i++) {
             cache.put("hash" + i, new SignedTexture("value" + i, "signature" + i));
         }
@@ -74,7 +75,7 @@ abstract class TextureCacheContract {
     }
 
     @Test
-    void sameImageSameHashAndOnePixelChangesIt() {
+    public void sameImageSameHashAndOnePixelChangesIt() {
         BufferedImage first = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
         BufferedImage second = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
 
