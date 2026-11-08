@@ -59,7 +59,7 @@ class NpcRepositoryTest {
 
         repository.delete(id);
 
-        assertFalse(Files.exists(repository.file(id)));
+        assertFalse(Files.exists(folder.resolve(id + ".yml")));
         assertEquals(Optional.empty(), repository.find(id));
     }
 
@@ -85,7 +85,7 @@ class NpcRepositoryTest {
         UUID id = UUID.randomUUID();
         NpcRepository repository = load();
         repository.save(new NpcRecord(id, STEVE));
-        Files.delete(repository.file(id));
+        Files.delete(folder.resolve(id + ".yml"));
 
         repository.forget(id);
 

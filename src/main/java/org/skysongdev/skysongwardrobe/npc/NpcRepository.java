@@ -1,10 +1,8 @@
 package org.skysongdev.skysongwardrobe.npc;
 
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.skysongdev.skysongwardrobe.render.SignedTexture;
+import org.skysongdev.skysongwardrobe.storage.StorageException;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,64 +11,49 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
- * Saves NPC records to {@code npcs/<uuid>.yml}. A server can have many NPCs, and only those with a
- * wardrobe have a file, so each is read the first time it is asked for and then kept. A file
- * that can't be read is left untouched and treated as missing, so nothing in it is lost.
+ * NPC records, saved through a {@link NpcRecordStore}. A server can have many NPCs, and only
+ * those with a wardrobe have a record, so each is read the first time it is asked for and then kept.
  */
 public final class NpcRepository {
-    private static final String VALUE = "base.value";
-    private static final String SIGNATURE = "base.signature";
-
-    private final Path folder;
-    private final Logger logger;
+    private final NpcRecordStore store;
     private final Map<UUID, Optional<NpcRecord>> cache = new HashMap<>();
 
-    public NpcRepository(Path folder, Logger logger) {
-        this.folder = folder;
-        this.logger = logger;
+    public NpcRepository(NpcRecordStore store) {
+        this.store = store;
     }
 
-    /** The NPC's record, if it has one. */
+    /** Records saved as YAML files in {@code folder}. */
+    public NpcRepository(Path folder, Logger logger) {
+        this(new YamlNpcRecordStore(folder, logger));
+    }
+
+    /** The NPC's record, if it has one. A store that can't be read throws {@link StorageException}. */
     public synchronized Optional<NpcRecord> find(UUID id) {
-        return cache.computeIfAbsent(id, this::read);
+        Optional<NpcRecord> cached = cache.get(id);
+        if (cached != null) {
+            return cached;
+        }
+        try {
+            Optional<NpcRecord> read = store.read(id);
+            cache.put(id, read);
+            return read;
+        } catch (IOException failed) {
+            throw new StorageException("Could not read the record of NPC " + id, failed);
+        }
     }
 
     public synchronized void save(NpcRecord npc) throws IOException {
-        YamlConfiguration file = new YamlConfiguration();
-        file.set(VALUE, npc.base().value());
-        file.set(SIGNATURE, npc.base().signature());
-        Files.createDirectories(folder);
-        file.save(file(npc.id()).toFile());
+        store.write(npc);
         cache.put(npc.id(), Optional.of(npc));
     }
 
     public synchronized void delete(UUID id) throws IOException {
-        Files.deleteIfExists(file(id));
+        store.delete(id);
         cache.put(id, Optional.empty());
     }
 
-    /** Where the NPC's record is saved, for moving it aside when the NPC is removed. */
-    public Path file(UUID id) {
-        return folder.resolve(id + ".yml");
-    }
-
-    /** Forgets the cached copy, for a record whose file was moved; the next find reads the disk again. */
+    /** Forgets the cached copy; the next find reads the store again. */
     public synchronized void forget(UUID id) {
         cache.remove(id);
-    }
-
-    private Optional<NpcRecord> read(UUID id) {
-        Path path = file(id);
-        if (!Files.isRegularFile(path)) {
-            return Optional.empty();
-        }
-        YamlConfiguration file = YamlConfiguration.loadConfiguration(path.toFile());
-        String value = file.getString(VALUE);
-        String signature = file.getString(SIGNATURE);
-        if (value == null || signature == null) {
-            logger.warning(path + " has no base skin, so it is kept untouched and the NPC is treated as undressed.");
-            return Optional.empty();
-        }
-        return Optional.of(new NpcRecord(id, new SignedTexture(value, signature)));
     }
 }
