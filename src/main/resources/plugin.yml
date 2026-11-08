@@ -11,3 +11,6 @@ depend: [Skysong_Items]
 # WorldGuard regions decide who may place, use and break mannequins, and
 # Citizens player NPCs get a wardrobe.
 softdepend: [SkysongStats, WorldGuard, Citizens]
+# Downloaded by Paper at start: the connection pool for storage.type sqlite or mysql.
+libraries:
+  - com.zaxxer:HikariCP:6.2.1

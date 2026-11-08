@@ -96,6 +96,14 @@ dependencies {
     implementation('org.mineskin:java-client-java11:3.2.6') {
         transitive = false
     }
+    // HikariCP pools the database connections when storage.type is sqlite or mysql. Paper
+    // downloads it at start (plugin.yml libraries:), as for SkysongStats, so it is never shaded.
+    // The MySQL and SQLite drivers already ship inside Paper.
+    compileOnly 'com.zaxxer:HikariCP:6.2.1'
+    testImplementation 'com.zaxxer:HikariCP:6.2.1'
+    // The SQL is tested on both real databases it runs on: SQLite, and H2 in MySQL mode.
+    testImplementation 'org.xerial:sqlite-jdbc:3.49.1.0'
+    testImplementation 'com.h2database:h2:2.3.232'
 
     // Tests run on JUnit 6 and MockBukkit 4.116.3, the same versions SkysongItems uses.
     // That MockBukkit release mocks Paper 1.21.11, the API this plugin compiles against.
