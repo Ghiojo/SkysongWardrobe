@@ -7,6 +7,7 @@ import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
 import org.skysongdev.skysongwardrobe.render.BaseSkins;
 import org.skysongdev.skysongwardrobe.render.ImageFetcher;
 import org.skysongdev.skysongwardrobe.render.OutfitRenderer;
+import org.skysongdev.skysongwardrobe.render.RenderQueue;
 import org.skysongdev.skysongwardrobe.render.RenderRouter;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
@@ -16,6 +17,7 @@ import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
 import java.nio.file.Path;
+import java.time.Clock;
 import java.util.function.Supplier;
 
 /**
@@ -30,19 +32,21 @@ public final class NpcWardrobes {
     private final NpcSkins skins;
     private final PluginConfiguration configuration;
     private final Server server;
+    private final NpcLifecycle lifecycle;
 
     private NpcWardrobes(NpcRepository records, WardrobeRepository wardrobes, NpcAccess access, NpcSkins skins,
-                         PluginConfiguration configuration, Server server) {
+                         PluginConfiguration configuration, Server server, NpcLifecycle lifecycle) {
         this.records = records;
         this.wardrobes = wardrobes;
         this.access = access;
         this.skins = skins;
         this.configuration = configuration;
         this.server = server;
+        this.lifecycle = lifecycle;
     }
 
     /** Everything the shared pieces need to dress and render NPCs. */
-    public record Shared(PluginConfiguration configuration, WardrobeKinds kinds, RenderRouter router,
+    public record Shared(PluginConfiguration configuration, WardrobeKinds kinds, RenderRouter router, RenderQueue queue,
                          OutfitRenderer outfits, TextureCache cache, ImageFetcher fetcher, TaskRunner tasks) {
     }
 
@@ -61,12 +65,20 @@ public final class NpcWardrobes {
                 (npc, editor) -> plugin.getServer().getPluginManager().callEvent(new NpcUpdateEvent(npc, editor)));
         plugin.getServer().getPluginManager().registerEvents(new NpcRenderTrigger(renderer), plugin);
         NpcAccess access = NpcAccess.standard(() -> shared.configuration().settings().npcPermissions());
-        return new NpcWardrobes(records, wardrobes, access, skins, shared.configuration(), plugin.getServer());
+        NpcLifecycle lifecycle = new NpcLifecycle(records, wardrobes,
+                new NpcArchive(folder.resolve("removed"), plugin.getLogger()), shared.queue(), plugin.getServer(),
+                Clock.systemUTC(), plugin.getLogger());
+        return new NpcWardrobes(records, wardrobes, access, skins, shared.configuration(), plugin.getServer(), lifecycle);
     }
 
     /** {@code /sw npc}, finding NPCs through {@code directory}. */
     public NpcCommand command(NpcDirectory directory, Supplier<ItemTagGateway> tags) {
         return new NpcCommand(directory, skins, access, wardrobes, tags, configuration, server);
+    }
+
+    /** Archives the wardrobes of removed NPCs and copies those of copied ones. */
+    public NpcLifecycle lifecycle() {
+        return lifecycle;
     }
 
     /** Each dressed NPC's saved base skin. */
