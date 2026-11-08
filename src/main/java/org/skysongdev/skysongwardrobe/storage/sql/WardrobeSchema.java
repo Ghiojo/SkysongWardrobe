@@ -9,6 +9,7 @@ public final class WardrobeSchema {
 
     public static List<SchemaStep> steps() {
         return List.of(
-                new SchemaStep(1, "texture cache", SqlTextureCache::createTables));
+                new SchemaStep(1, "texture cache", SqlTextureCache::createTables),
+                new SchemaStep(2, "wardrobes", SqlWardrobeStore::createTables));
     }
 }

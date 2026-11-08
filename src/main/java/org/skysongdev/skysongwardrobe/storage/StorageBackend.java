@@ -2,6 +2,8 @@ package org.skysongdev.skysongwardrobe.storage;
 
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.storage.importing.DatasetImporter;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeStore;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -15,6 +17,9 @@ public interface StorageBackend extends AutoCloseable {
 
     /** The signed skins. */
     TextureCache textures();
+
+    /** The wardrobes of one kind of wearer, kept apart from the other kinds. */
+    WardrobeStore wardrobes(WardrobeKind kind);
 
     /**
      * What {@code /sw storage import} copies from the YAML files in {@code dataFolder} into this

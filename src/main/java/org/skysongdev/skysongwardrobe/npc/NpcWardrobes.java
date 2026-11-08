@@ -57,8 +57,13 @@ public final class NpcWardrobes {
 
     /** Starts NPC wardrobes on {@code skins}, keeping their files under {@code folder}. */
     public static NpcWardrobes start(Plugin plugin, Path folder, NpcSkins skins, Shared shared) {
+        return start(plugin, folder, skins, shared, new WardrobeRepository(folder.resolve("wardrobes"), plugin.getLogger()));
+    }
+
+    /** Starts NPC wardrobes on {@code skins}, their wardrobes in {@code wardrobes} and the rest under {@code folder}. */
+    public static NpcWardrobes start(Plugin plugin, Path folder, NpcSkins skins, Shared shared,
+                                     WardrobeRepository wardrobes) {
         NpcRepository records = new NpcRepository(folder, plugin.getLogger());
-        WardrobeRepository wardrobes = new WardrobeRepository(folder.resolve("wardrobes"), plugin.getLogger());
         BaseSkins images = new BaseSkins(shared.cache(), shared.fetcher(),
                 () -> shared.configuration().settings().verbose(), plugin.getLogger());
         NpcSkinApplier applier = new NpcSkinApplier(skins, shared.tasks());
