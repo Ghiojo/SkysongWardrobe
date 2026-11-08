@@ -12,6 +12,8 @@ Each worn item can carry skin layers, which are drawn over the player's own skin
   stats with `item-tags:` exactly like items in the inventory.
 - WorldGuard 7: optional. When it is installed, region flags decide who may place, use and
   break mannequins (see [Mannequins](#mannequins)).
+- Citizens 2.0.43 or newer for 1.21.11: optional. When it is installed, player NPCs get a
+  wardrobe too (see [Citizens NPCs](#citizens-npcs)).
 - A MineSkin API key, so new looks can be shown to players (see [MineSkin setup](#mineskin-setup)).
 
 ## Building
@@ -52,6 +54,8 @@ player only ever has one look waiting.
 | `/sw del <id>` | Removes an entry from your gallery | a gallery permission |
 | `/sw apply [player:]id <regular\|dyed>` | Puts a gallery entry on the item in your main hand | an apply permission (`.other` for another player's entry) |
 | `/sw unapply <regular\|dyed>` | Removes a layer from the item in your main hand | an apply permission |
+| `/sw npc [number]` | Opens a Citizens NPC's wardrobe | an NPC permission (`.other` for NPCs you don't own) |
+| `/sw npc removed` | Takes items back from removed NPCs' wardrobes | the `.other` variant of an NPC permission |
 | `/sw reload` | Reloads every config file | `skysongwardrobe.admin` |
 
 The gallery and apply permissions are lists in `config.yml`. Holding any one of them is
@@ -163,12 +167,64 @@ bypass may always.
 - `mannequins.max-per-chunk` (default `15`): how many mannequins one chunk may hold, for
   everyone.
 
+## Citizens NPCs
+
+With Citizens installed, player-type NPCs (`/npc type player`, the default) can wear a
+wardrobe just like players and mannequins. Other NPC types, such as zombies or mannequin
+NPCs, can't.
+
+### Opening an NPC's wardrobe
+
+`/sw npc` opens the wardrobe of the NPC you selected with `/npc sel`, or else the one you
+are looking at (within 5 blocks). `/sw npc <number>` opens one by its Citizens number, as
+shown by `/npc list`. Only one person can dress an NPC at a time. Its new look is drawn
+when the menu closes. In the MineSkin queue, player looks go first, then NPCs, then mannequins.
+
+The NPC wardrobe has the same slots as a player's and no equipment slots; give NPCs
+equipment with Citizens' own `/npc equip`. Items an NPC wears never count towards
+SkysongStats.
+
+### Base skin
+
+An NPC's outfit is drawn over its current Citizens skin, so set one with `/npc skin` first.
+The plugin remembers that skin before dressing the NPC, because once dressed the NPC only
+holds the rendered look. Changing the skin with `/npc skin` later makes the new skin the
+base the next time the wardrobe closes. Whether the NPC has slim or classic arms comes
+from its base skin.
+
+### Who may dress an NPC
+
+Opening an NPC's wardrobe needs one of the permissions under `npcs.permissions` in
+`config.yml` (by default `skysongwardrobe.npc`), and either:
+
+- being the NPC's Citizens owner (`/npc owner <player>`), or
+- holding the `.other` variant of one of those permissions, such as
+  `skysongwardrobe.npc.other`, which reaches every NPC.
+
+The access check is a list of rules where any one rule can allow, so later features (such
+as NPCs that belong to a SkysongEconomy business) can add a rule without changing the others.
+
+### Removed and copied NPCs
+
+When an NPC is removed with `/npc remove`, anything in its wardrobe is moved to
+`npcs/removed/` so nothing is lost. Staff can get those items back with
+`/sw npc removed`: it lists the removed NPCs, newest first, and clicking one opens its
+wardrobe, which items can only be taken out of. An entry is deleted once it's empty.
+
+`/npc copy` gives the copy the same wardrobe and base skin as the original.
+
+### Building with Citizens
+
+The plugin compiles against Citizens from `maven.citizensnpcs.co`. If your internet
+provider blocks that host, build once over a VPN; Gradle keeps the files afterwards.
+Citizens is not bundled in the jar.
+
 ## Configuration
 
 Run `/sw reload` after editing any of these files.
 
-- `config.yml`: permissions, download limits, the upload cooldown, mannequin limits, the
-  MineSkin API key and skin visibility.
+- `config.yml`: permissions, download limits, the upload cooldown, mannequin limits, NPC
+  permissions, the MineSkin API key and skin visibility.
   Turn on `verbose` to log silent failures, such as a worn item whose skin file is missing.
 - `wardrobe.yml`: the wardrobe and gallery menus. Each wardrobe slot has a `position`
   (0 to 53), the `wardrobe_type` values it `accepts`, and a `priority`; higher priorities
@@ -176,7 +232,7 @@ Run `/sw reload` after editing any of these files.
   error is logged until it is fixed.
 - `messages.yml`: every message, in MiniMessage format. The `hotbar` list names the
   sections or keys shown above the hotbar instead of in chat (by default the wardrobe,
-  render, mannequin, apply and unapply messages). A messages.yml without the list uses
+  render, mannequin, npc, apply and unapply messages). A messages.yml without the list uses
   the default one.
 
 ## Data files
@@ -192,6 +248,9 @@ Inside `plugins/SkysongWardrobe/`:
 - `mannequin-skins/`: the base skins mannequins can wear.
 - `mannequins/`: one file per placed mannequin, with its owner, skin, arm model and saved
   spawner. `mannequins/wardrobes/` holds what each mannequin wears.
+- `npcs/`: one file per dressed Citizens NPC, named by its UUID, with its base skin.
+  `npcs/wardrobes/` holds what each NPC wears, and `npcs/removed/` keeps the wardrobes of
+  removed NPCs until staff empty them.
 
 ## MineSkin setup
 
