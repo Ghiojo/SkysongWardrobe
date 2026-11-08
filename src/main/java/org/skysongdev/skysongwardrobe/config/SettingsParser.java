@@ -19,6 +19,7 @@ public final class SettingsParser {
     static final String DEFAULT_MANNEQUIN_PERMISSION = "skysongwardrobe.mannequin";
     static final int DEFAULT_MANNEQUINS_PER_PLAYER = 0;
     static final int DEFAULT_MANNEQUINS_PER_CHUNK = 15;
+    static final String DEFAULT_NPC_PERMISSION = "skysongwardrobe.npc";
     static final SkinVisibility DEFAULT_SKIN_VISIBILITY = SkinVisibility.UNLISTED;
 
     private final List<String> warnings = new ArrayList<>();
@@ -38,7 +39,8 @@ public final class SettingsParser {
                 new MannequinSettings(
                         permissions(config, "mannequins.permissions", DEFAULT_MANNEQUIN_PERMISSION),
                         nonNegativeInt(config, "mannequins.max-per-player", DEFAULT_MANNEQUINS_PER_PLAYER),
-                        nonNegativeInt(config, "mannequins.max-per-chunk", DEFAULT_MANNEQUINS_PER_CHUNK)));
+                        nonNegativeInt(config, "mannequins.max-per-chunk", DEFAULT_MANNEQUINS_PER_CHUNK)),
+                permissions(config, "npcs.permissions", DEFAULT_NPC_PERMISSION));
     }
 
     /** The values the last {@link #parse} replaced with their defaults, one line each. */

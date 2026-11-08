@@ -3,11 +3,13 @@ package org.skysongdev.skysongwardrobe;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.skysongdev.skysongitems.api.SkysongItemsApi;
+import org.skysongdev.skysongwardrobe.citizens.CitizensHook;
 import org.skysongdev.skysongwardrobe.commands.ApplyCommand;
 import org.skysongdev.skysongwardrobe.commands.DeleteCommand;
 import org.skysongdev.skysongwardrobe.commands.EditCommand;
 import org.skysongdev.skysongwardrobe.commands.GalleryCommand;
 import org.skysongdev.skysongwardrobe.commands.ReloadCommand;
+import org.skysongdev.skysongwardrobe.commands.SubCommand;
 import org.skysongdev.skysongwardrobe.commands.UnapplyCommand;
 import org.skysongdev.skysongwardrobe.commands.UploadCommand;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommand;
@@ -43,6 +45,7 @@ import org.skysongdev.skysongwardrobe.mannequin.OwnerAccess;
 import org.skysongdev.skysongwardrobe.mannequin.PaperMannequinBodies;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinSpawnGuard;
 import org.skysongdev.skysongwardrobe.mannequin.PaperMannequinSpawner;
+import org.skysongdev.skysongwardrobe.npc.NpcWardrobes;
 import org.skysongdev.skysongwardrobe.menu.MenuListener;
 import org.skysongdev.skysongwardrobe.prompt.DialogConfirmationPrompt;
 import org.skysongdev.skysongwardrobe.render.BaseSkins;
@@ -70,7 +73,9 @@ import org.skysongdev.skysongwardrobe.wardrobe.WardrobeSessionListener;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -89,6 +94,7 @@ public class SkysongWardrobe extends JavaPlugin {
     /** How often the render queue checks for a job it may upload: once a second. */
     private static final long QUEUE_PERIOD_TICKS = 20;
     private static final String SKYSONG_STATS = "SkysongStats";
+    private static final String CITIZENS = "Citizens";
     private static final String WORLD_GUARD = "WorldGuard";
 
     private PluginConfiguration configuration;
@@ -101,6 +107,10 @@ public class SkysongWardrobe extends JavaPlugin {
     private MannequinMarker mannequinMarker;
     private MannequinBodies mannequinBodies;
     private boolean worldGuardFlags;
+    private WardrobeKinds wardrobeKinds;
+    private RenderRouter renderRouter;
+    private TextureCache textureCache;
+    private NpcWardrobes npcWardrobes;
 
     /** WorldGuard is optional; its flags must be registered before it enables, so here. */
     @Override
@@ -141,7 +151,7 @@ public class SkysongWardrobe extends JavaPlugin {
         SkinUploader uploader = new SkinUploader(galleries, archive, () -> downloader(configuration.settings(), getLogger()),
                 new DialogConfirmationPrompt(), configuration, new BukkitTaskRunner(this), Clock.systemUTC(), getLogger());
 
-        WardrobeCommands commands = new WardrobeCommands(List.of(
+        List<SubCommand> subCommands = new ArrayList<>(List.of(
                 new ReloadCommand(configuration),
                 new UploadCommand(uploader, configuration),
                 new EditCommand(galleries, uploader, configuration, getLogger()),
@@ -153,11 +163,15 @@ public class SkysongWardrobe extends JavaPlugin {
         wardrobes = new WardrobeRepository(getDataFolder().toPath().resolve("wardrobes"), getLogger());
         loadMannequins();
         WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes, itemTags, configuration, getServer());
-        getServer().getPluginManager().registerEvents(new WardrobeMenuListener(
-                WardrobeKinds.of(wardrobes, mannequinWardrobes, getServer()), configuration, getServer(), getLogger()), this);
+        wardrobeKinds = WardrobeKinds.of(wardrobes, mannequinWardrobes, getServer());
+        getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobeKinds, configuration, getServer(),
+                getLogger()), this);
         getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer()), this);
         OutfitRenderer outfits = startRendering(itemTags);
         startMannequins(itemTags, outfits);
+        hookCitizens(outfits);
+        npcWardrobes().ifPresent(npcs -> subCommands.add(npcs.command(CitizensHook.directory(), itemTags)));
+        WardrobeCommands commands = new WardrobeCommands(subCommands);
         hookSkysongStats();
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {
@@ -205,6 +219,22 @@ public class SkysongWardrobe extends JavaPlugin {
                 new MannequinBreakListener(breaker, mannequinMarker, configuration::messages), this);
     }
 
+    /** Citizens is optional; its classes are only loaded when it is enabled. */
+    private void hookCitizens(OutfitRenderer outfits) {
+        if (!getServer().getPluginManager().isPluginEnabled(CITIZENS)) {
+            return;
+        }
+        try {
+            npcWardrobes = NpcWardrobes.start(this, getDataFolder().toPath().resolve("npcs"), CitizensHook.skins(),
+                    new NpcWardrobes.Shared(configuration, wardrobeKinds, renderRouter, renderQueue, outfits, textureCache,
+                            new HttpImageFetcher(BASE_SKIN_TIMEOUT), new BukkitTaskRunner(this)));
+            CitizensHook.follow(this, npcWardrobes.lifecycle());
+            getLogger().info("Citizens player NPCs can now be dressed.");
+        } catch (RuntimeException | LinkageError failed) {
+            getLogger().log(Level.WARNING, "Could not hook into Citizens; NPCs can't be dressed.", failed);
+        }
+    }
+
     /** SkysongStats is optional; its API classes are only loaded when it is enabled. */
     private void hookSkysongStats() {
         if (!getServer().getPluginManager().isPluginEnabled(SKYSONG_STATS)) {
@@ -225,6 +255,7 @@ public class SkysongWardrobe extends JavaPlugin {
     private OutfitRenderer startRendering(Supplier<ItemTagGateway> itemTags) {
         BukkitTaskRunner tasks = new BukkitTaskRunner(this);
         TextureCache cache = TextureCache.load(getDataFolder().toPath().resolve("texture-cache.yml"));
+        textureCache = cache;
         BaseSkins bases = new BaseSkins(cache, new HttpImageFetcher(BASE_SKIN_TIMEOUT),
                 () -> configuration.settings().verbose(), getLogger());
         SkinApplier applier = new SkinApplier(getServer(), tasks);
@@ -236,7 +267,8 @@ public class SkysongWardrobe extends JavaPlugin {
                         () -> configuration.settings().skinVisibility()));
         renderQueue = RenderQueue.load(getDataFolder().toPath().resolve("render-queue.yml"), signer, cache,
                 () -> Duration.ofSeconds(configuration.settings().uploadCooldownSeconds()), Clock.systemUTC(),
-                new RenderRouter().route(WearerKind.PLAYER, applier).route(WearerKind.MANNEQUIN, mannequinApplier),
+                renderRouter = new RenderRouter().route(WearerKind.PLAYER, applier)
+                        .route(WearerKind.MANNEQUIN, mannequinApplier),
                 getLogger());
         OutfitRenderer outfits = new OutfitRenderer(itemTags,
                 new LayerResolver(galleries, () -> configuration.settings().verbose(), getLogger()),
@@ -292,6 +324,11 @@ public class SkysongWardrobe extends JavaPlugin {
     /** Tells this plugin's mannequin entities apart. */
     public MannequinMarker mannequinMarker() {
         return mannequinMarker;
+    }
+
+    /** NPC wardrobes, or empty when Citizens isn't enabled. */
+    public Optional<NpcWardrobes> npcWardrobes() {
+        return Optional.ofNullable(npcWardrobes);
     }
 
     /** One loaded gallery per player. */

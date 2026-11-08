@@ -79,10 +79,11 @@ public final class WardrobeMenuListener implements Listener {
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        if (!(event.getInventory().getHolder() instanceof WardrobeMenu menu) || !menu.changed()) {
+        if (!(event.getInventory().getHolder() instanceof WardrobeMenu menu) || !menu.changed()
+                || !(event.getPlayer() instanceof Player editor)) {
             return;
         }
-        kinds.get(menu.kind()).ifPresent(kind -> kind.changed().accept(menu.wardrobe().owner()));
+        kinds.get(menu.kind()).ifPresent(kind -> kind.changed().accept(menu.wardrobe().owner(), editor));
     }
 
     private void onOwnInventoryClick(InventoryClickEvent event, WardrobeMenu menu, Player player) {

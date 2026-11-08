@@ -38,3 +38,9 @@ mannequins:
   max-per-player: 0
   # The most mannequins one chunk may hold. 0 means no limit.
   max-per-chunk: 15
+
+npcs:
+  # Holding ANY one of these lets a player dress the Citizens NPCs they own with /sw npc.
+  # The .other variant (such as skysongwardrobe.npc.other) reaches every NPC. Needs Citizens.
+  permissions:
+    - skysongwardrobe.npc
