@@ -149,4 +149,24 @@ class WardrobeMenuTest {
 
         assertTrue(wardrobe.worn(layout()).isEmpty());
     }
+
+    @Test
+    void anNpcsMenuHasNoEquipmentSlots() {
+        WardrobeMenu npc = new WardrobeMenu(WardrobeKind.NPC, wardrobe, layout(), tags());
+
+        assertEquals(Optional.empty(), npc.placeInto(MannequinEquipment.HEAD.position(), new ItemStack(Material.IRON_HELMET)).refusal());
+        assertTrue(wardrobe.items().isEmpty());
+        assertEquals(Optional.of(WardrobeMenu.Refusal.NO_TYPE), npc.placeAnywhere(new ItemStack(Material.STICK)).refusal());
+    }
+
+    @Test
+    void aMenuShowsOnlyItsOwnKindAndWearer() {
+        WardrobeMenu mannequin = WardrobeMenu.forMannequin(wardrobe, layout(), tags());
+
+        assertEquals(WardrobeKind.MANNEQUIN, mannequin.kind());
+        assertTrue(mannequin.shows(WardrobeKind.MANNEQUIN, wardrobe.owner()));
+        assertFalse(mannequin.shows(WardrobeKind.NPC, wardrobe.owner()));
+        assertFalse(mannequin.shows(WardrobeKind.MANNEQUIN, java.util.UUID.randomUUID()));
+        assertEquals(WardrobeKind.PLAYER, menu.kind());
+    }
 }

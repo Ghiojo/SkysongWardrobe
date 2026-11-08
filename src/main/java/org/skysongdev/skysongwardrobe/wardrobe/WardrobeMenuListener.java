@@ -20,20 +20,17 @@ import java.util.logging.Logger;
  * Turns inventory events in a wardrobe menu into {@link WardrobeMenu} moves. Clicks in the menu
  * are always cancelled and done by hand, so no item can slip past the slot rules. Shift-clicks
  * from the player's inventory go through the same rules; drags into the menu and number-key
- * swaps are refused. Every accepted change saves; closing a changed menu fires
- * {@link WardrobeUpdateEvent} for the owner, if they are online.
+ * swaps are refused. Every accepted change saves to the menu kind's storage, and closing a
+ * changed menu runs that kind's change handler from {@link WardrobeKinds}.
  */
 public final class WardrobeMenuListener implements Listener {
-    private final WardrobeRepository wardrobes;
-    private final WardrobeRepository mannequinWardrobes;
+    private final WardrobeKinds kinds;
     private final PluginConfiguration configuration;
     private final Server server;
     private final Logger logger;
 
-    public WardrobeMenuListener(WardrobeRepository wardrobes, WardrobeRepository mannequinWardrobes,
-                                PluginConfiguration configuration, Server server, Logger logger) {
-        this.wardrobes = wardrobes;
-        this.mannequinWardrobes = mannequinWardrobes;
+    public WardrobeMenuListener(WardrobeKinds kinds, PluginConfiguration configuration, Server server, Logger logger) {
+        this.kinds = kinds;
         this.configuration = configuration;
         this.server = server;
         this.logger = logger;
@@ -85,14 +82,7 @@ public final class WardrobeMenuListener implements Listener {
         if (!(event.getInventory().getHolder(false) instanceof WardrobeMenu menu) || !menu.changed()) {
             return;
         }
-        if (menu.isMannequin()) {
-            server.getPluginManager().callEvent(new MannequinUpdateEvent(menu.wardrobe().owner()));
-        } else {
-            Player owner = server.getPlayer(menu.wardrobe().owner());
-            if (owner != null) {
-                server.getPluginManager().callEvent(new WardrobeUpdateEvent(owner));
-            }
-        }
+        kinds.get(menu.kind()).ifPresent(kind -> kind.changed().accept(menu.wardrobe().owner()));
     }
 
     private void onOwnInventoryClick(InventoryClickEvent event, WardrobeMenu menu, Player player) {
@@ -112,7 +102,9 @@ public final class WardrobeMenuListener implements Listener {
 
     private void saved(WardrobeMenu menu, Player player) {
         try {
-            (menu.isMannequin() ? mannequinWardrobes : wardrobes).save(menu.wardrobe());
+            WardrobeKinds.Kind kind = kinds.get(menu.kind())
+                    .orElseThrow(() -> new IOException("Nothing stores " + menu.kind() + " wardrobes."));
+            kind.wardrobes().save(menu.wardrobe());
         } catch (IOException failed) {
             logger.log(Level.WARNING, "Could not save the wardrobe of " + menu.wardrobe().owner() + ".", failed);
             configuration.messages().send(player, "wardrobe.save-error");

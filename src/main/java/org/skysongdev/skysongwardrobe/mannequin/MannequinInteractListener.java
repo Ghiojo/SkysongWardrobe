@@ -9,6 +9,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.config.WardrobeLayout;
 import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenu;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
@@ -68,6 +69,6 @@ public final class MannequinInteractListener implements Listener {
     private boolean inUse(UUID id) {
         return server.getOnlinePlayers().stream()
                 .flatMap(online -> WardrobeMenu.of(online.getOpenInventory()).stream())
-                .anyMatch(menu -> menu.isMannequin() && menu.wardrobe().owner().equals(id));
+                .anyMatch(menu -> menu.shows(WardrobeKind.MANNEQUIN, id));
     }
 }

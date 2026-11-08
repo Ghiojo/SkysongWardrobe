@@ -49,8 +49,8 @@ class WardrobeMenuListenerTest {
         wardrobes = new WardrobeRepository(folder, Logger.getAnonymousLogger());
         mannequinWardrobes = new WardrobeRepository(folder.resolve("mannequins"), Logger.getAnonymousLogger());
         server.getPluginManager().registerEvents(
-                new WardrobeMenuListener(wardrobes, mannequinWardrobes, plugin.configuration(), server,
-                        Logger.getAnonymousLogger()), plugin);
+                new WardrobeMenuListener(WardrobeKinds.of(wardrobes, mannequinWardrobes, server), plugin.configuration(),
+                        server, Logger.getAnonymousLogger()), plugin);
         menu = new WardrobeMenu(wardrobes.load(player.getUniqueId()), WardrobeMenuTest.layout(), WardrobeMenuTest.tags());
         player.openInventory(menu.getInventory());
     }

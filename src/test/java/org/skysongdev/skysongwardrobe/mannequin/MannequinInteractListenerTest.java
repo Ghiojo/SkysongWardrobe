@@ -18,6 +18,7 @@ import org.mockbukkit.mockbukkit.world.WorldMock;
 import org.skysongdev.skysongwardrobe.SkysongWardrobe;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
 import org.skysongdev.skysongwardrobe.render.ArmModel;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenu;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
@@ -70,7 +71,7 @@ class MannequinInteractListenerTest {
     }
 
     private static boolean looksAtMannequinMenu(PlayerMock player) {
-        return WardrobeMenu.of(player.getOpenInventory()).filter(WardrobeMenu::isMannequin).isPresent();
+        return WardrobeMenu.of(player.getOpenInventory()).filter(menu -> menu.kind() == WardrobeKind.MANNEQUIN).isPresent();
     }
 
     private static String message(PlayerMock player) {
