@@ -90,6 +90,7 @@ class WardrobeImporterTest {
     void theDatabaseBackendImportsTexturesAndEveryWardrobeKind() {
         List<String> datasets = database.importers(folder).stream().map(DatasetImporter::dataset).toList();
 
-        assertEquals(List.of("textures", "player wardrobes", "mannequin wardrobes", "npc wardrobes"), datasets);
+        assertEquals(List.of("textures", "player wardrobes", "mannequin wardrobes", "npc wardrobes", "mannequins"),
+                datasets);
     }
 }
