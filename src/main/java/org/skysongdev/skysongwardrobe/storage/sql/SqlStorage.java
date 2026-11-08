@@ -5,6 +5,8 @@ import org.skysongdev.skysongwardrobe.storage.StorageBackend;
 import org.skysongdev.skysongwardrobe.storage.YamlStorage;
 import org.skysongdev.skysongwardrobe.storage.importing.DatasetImporter;
 import org.skysongdev.skysongwardrobe.storage.importing.TextureImporter;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeStore;
 
 import java.nio.file.Path;
 import java.time.Clock;
@@ -16,11 +18,13 @@ import java.util.logging.Logger;
  * hands out the SQL stores, all sharing one connection pool.
  */
 public final class SqlStorage implements StorageBackend {
+    private final SqlDatabase database;
     private final AutoCloseable connections;
     private final TextureCache textures;
 
     /** Takes ownership of {@code connections}, which {@link #close()} closes. */
     public SqlStorage(SqlDatabase database, AutoCloseable connections, Clock clock, Logger logger) {
+        this.database = database;
         this.connections = connections;
         new SchemaMigrator(database, logger).migrate(WardrobeSchema.steps());
         this.textures = new SqlTextureCache(database, clock);
@@ -29,6 +33,11 @@ public final class SqlStorage implements StorageBackend {
     @Override
     public TextureCache textures() {
         return textures;
+    }
+
+    @Override
+    public WardrobeStore wardrobes(WardrobeKind kind) {
+        return new SqlWardrobeStore(database, kind);
     }
 
     @Override

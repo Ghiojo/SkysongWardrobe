@@ -71,8 +71,8 @@ import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenuListener;
 import org.skysongdev.skysongwardrobe.worldguard.RegionAccess;
 import org.skysongdev.skysongwardrobe.worldguard.WorldGuardRegionRules;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
-import org.skysongdev.skysongwardrobe.wardrobe.YamlWardrobeStore;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeSessionListener;
 
 import java.io.IOException;
@@ -177,8 +177,7 @@ public class SkysongWardrobe extends JavaPlugin {
                 new ApplyCommand(galleries, itemTags, configuration, getServer()),
                 new UnapplyCommand(itemTags, configuration)));
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
-        wardrobes = new WardrobeRepository(new YamlWardrobeStore(getDataFolder().toPath().resolve("wardrobes"),
-                getLogger()), storageWriter, getLogger());
+        wardrobes = new WardrobeRepository(storage.wardrobes(WardrobeKind.PLAYER), storageWriter, getLogger());
         loadMannequins();
         WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes, itemTags, configuration, getServer());
         wardrobeKinds = WardrobeKinds.of(wardrobes, mannequinWardrobes, getServer());
@@ -211,8 +210,7 @@ public class SkysongWardrobe extends JavaPlugin {
     /** Reads every placed mannequin and their wardrobes, and clears out mannequins broken earlier. */
     private void loadMannequins() {
         mannequins = MannequinRepository.load(getDataFolder().toPath().resolve("mannequins"), getLogger());
-        mannequinWardrobes = new WardrobeRepository(new YamlWardrobeStore(
-                getDataFolder().toPath().resolve("mannequins").resolve("wardrobes"), getLogger()), storageWriter, getLogger());
+        mannequinWardrobes = new WardrobeRepository(storage.wardrobes(WardrobeKind.MANNEQUIN), storageWriter, getLogger());
         mannequinMarker = new MannequinMarker(this);
         getServer().getPluginManager().registerEvents(
                 new OrphanMannequinListener(mannequins, mannequinMarker, getLogger()), this);
@@ -245,7 +243,8 @@ public class SkysongWardrobe extends JavaPlugin {
         try {
             npcWardrobes = NpcWardrobes.start(this, getDataFolder().toPath().resolve("npcs"), CitizensHook.skins(),
                     new NpcWardrobes.Shared(configuration, wardrobeKinds, renderRouter, renderQueue, outfits, textureCache,
-                            new HttpImageFetcher(BASE_SKIN_TIMEOUT), new BukkitTaskRunner(this)));
+                            new HttpImageFetcher(BASE_SKIN_TIMEOUT), new BukkitTaskRunner(this)),
+                    new WardrobeRepository(storage.wardrobes(WardrobeKind.NPC), storageWriter, getLogger()));
             CitizensHook.follow(this, npcWardrobes.lifecycle());
             getLogger().info("Citizens player NPCs can now be dressed.");
         } catch (RuntimeException | LinkageError failed) {

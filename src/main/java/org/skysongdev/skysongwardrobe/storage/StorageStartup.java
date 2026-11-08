@@ -35,7 +35,7 @@ public final class StorageStartup {
         }
         try {
             StorageBackend backend = switch (read.type()) {
-                case YAML -> new YamlStorage(dataFolder);
+                case YAML -> new YamlStorage(dataFolder, logger);
                 case SQLITE, MYSQL -> sql(read, dataFolder, clock, logger);
             };
             logger.info("Storing data in " + describe(read) + ".");
