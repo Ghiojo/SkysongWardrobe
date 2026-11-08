@@ -14,6 +14,8 @@ Each worn item can carry skin layers, which are drawn over the player's own skin
   break mannequins (see [Mannequins](#mannequins)).
 - Citizens 2.0.43 or newer for 1.21.11: optional. When it is installed, player NPCs get a
   wardrobe too (see [Citizens NPCs](#citizens-npcs)).
+- MySQL 8 or MariaDB: optional. Only needed for `storage.type: mysql`
+  (see [Storage](#storage)).
 - A MineSkin API key, so new looks can be shown to players (see [MineSkin setup](#mineskin-setup)).
 
 ## Building
@@ -224,9 +226,10 @@ Citizens is not bundled in the jar.
 
 Run `/sw reload` after editing any of these files.
 
-- `config.yml`: permissions, download limits, the upload cooldown, mannequin limits, NPC
+- `config.yml`: where data is stored, permissions, download limits, the upload cooldown, mannequin limits, NPC
   permissions, the MineSkin API key and skin visibility.
   Turn on `verbose` to log silent failures, such as a worn item whose skin file is missing.
+  The `storage:` section is the exception to `/sw reload`: it is read only at start.
 - `wardrobe.yml`: the wardrobe and gallery menus. Each wardrobe slot has a `position`
   (0 to 53), the `wardrobe_type` values it `accepts`, and a `priority`; higher priorities
   are drawn over lower ones. If the file has an error, the wardrobe stays closed and the
@@ -238,20 +241,72 @@ Run `/sw reload` after editing any of these files.
 
 ## Data files
 
-Inside `plugins/SkysongWardrobe/`:
+Inside `plugins/SkysongWardrobe/`. With `storage.type: sqlite` or `mysql`, the wardrobes,
+signed looks, mannequins and NPCs marked *(database)* live in the database instead (see
+[Storage](#storage)).
 
 - `skins/`: one folder per gallery owner, named after the player. The folder keeps the
   owner's UUID inside and is renamed when the player changes name.
 - `deleted/`: a copy of every image removed with `/sw del`.
-- `wardrobes/`: what each player is wearing.
-- `texture-cache.yml`: looks MineSkin has already signed, so they are not uploaded again.
+- `wardrobes/`: what each player is wearing. *(database)*
+- `texture-cache.yml`: looks MineSkin has already signed, so they are not uploaded again. *(database)*
 - `render-queue.yml`: looks still waiting for MineSkin.
 - `mannequin-skins/`: the base skins mannequins can wear.
 - `mannequins/`: one file per placed mannequin, with its owner, skin, arm model and saved
-  spawner. `mannequins/wardrobes/` holds what each mannequin wears.
+  spawner. `mannequins/wardrobes/` holds what each mannequin wears. *(database)*
 - `npcs/`: one file per dressed Citizens NPC, named by its UUID, with its base skin.
   `npcs/wardrobes/` holds what each NPC wears, and `npcs/removed/` keeps the wardrobes of
-  removed NPCs until staff empty them.
+  removed NPCs until staff empty them. *(database)*
+
+## Storage
+
+`storage.type` in `config.yml` picks where the plugin keeps its data:
+
+- `yaml` (default): plain files, as listed in [Data files](#data-files).
+- `sqlite`: one local database file, `plugins/SkysongWardrobe/data.db` by default. Nothing
+  to set up, and much faster than YAML once thousands of looks are signed.
+- `mysql`: a MySQL or MariaDB server, set under `storage.mysql`.
+
+The database holds the signed looks, every wardrobe (players, mannequins, NPCs and removed
+NPCs), the mannequins and the NPCs' base skins. Galleries (`skins/`), `deleted/`,
+`render-queue.yml`, `mannequin-skins/` and the config files always stay as files, so you
+can still edit or back them up by hand.
+
+The storage settings are read only at start, so restart the server after changing them.
+If the database can't be opened, the plugin logs one line saying why and disables itself.
+It never falls back to the files, so nothing is silently written to the wrong place.
+
+The connection pool library (HikariCP) is downloaded by Paper the first time the plugin
+starts, and the MySQL and SQLite drivers come with Paper.
+
+### Sharing a MySQL server with SkysongStats
+
+The two plugins can use the same MySQL server and even the same database, but they don't
+share settings: SkysongWardrobe never reads SkysongStats' config. Put the connection details
+in SkysongWardrobe's own `config.yml`. A separate MySQL user for each plugin is best, so
+neither can touch the other's tables. Every table SkysongWardrobe creates starts with
+`table-prefix` (`sw_` by default; SkysongStats uses `ss_`), and the plugin creates and
+updates its tables by itself. Each server should use its own database or its own prefix.
+
+### Moving existing data into a database
+
+1. Stop the server and back up `plugins/SkysongWardrobe/`.
+2. Set `storage.type` to `sqlite` or `mysql` (and the `mysql` details), then start the server.
+3. Run `/sw storage import` from the console.
+
+The import copies the signed looks, every kind of wardrobe, the mannequins, the NPC base
+skins and the removed-NPC archive, and reports how many of each it copied and skipped. It
+only adds what the database doesn't have yet, so running it twice is safe and never
+overwrites newer data. The YAML files are left untouched; delete them yourself once
+everything looks right. There is no export back to files.
+
+### Resetting
+
+- Signed looks: on `yaml`, delete `texture-cache.yml` with the server stopped. On a
+  database, empty the `sw_textures` table with the server stopped. Looks are signed again
+  as players use them.
+- Everything: with the server stopped, drop every table starting with the prefix, or
+  delete `data.db`. The plugin creates the tables again on the next start.
 
 ## MineSkin setup
 
