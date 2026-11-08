@@ -24,7 +24,7 @@ import org.skysongdev.skysongwardrobe.render.RenderQueue;
 import org.skysongdev.skysongwardrobe.render.RenderRouter;
 import org.skysongdev.skysongwardrobe.render.SignResult;
 import org.skysongdev.skysongwardrobe.render.SignedTexture;
-import org.skysongdev.skysongwardrobe.render.TextureCache;
+import org.skysongdev.skysongwardrobe.render.YamlTextureCache;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.wardrobe.Wardrobe;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenu;
@@ -68,7 +68,7 @@ class MannequinBreakerTest {
         mannequins = MannequinRepository.load(folder, Logger.getAnonymousLogger());
         wardrobes = new WardrobeRepository(folder.resolve("wardrobes"), Logger.getAnonymousLogger());
         queue = RenderQueue.load(folder.resolve("render-queue.yml"), (skin, arms) -> new SignResult.Signed(
-                new SignedTexture("v", "s")), TextureCache.load(folder.resolve("cache.yml")), () -> Duration.ZERO,
+                new SignedTexture("v", "s")), YamlTextureCache.load(folder.resolve("cache.yml")), () -> Duration.ZERO,
                 Clock.systemUTC(), new RenderRouter(), Logger.getAnonymousLogger());
         entity = world.spawn(world.getSpawnLocation(), Zombie.class);
         marker.mark(entity);

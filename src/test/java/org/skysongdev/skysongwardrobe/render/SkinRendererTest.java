@@ -63,7 +63,7 @@ class SkinRendererTest {
         wear(MOJANG);
         plugin.wardrobes().load(player.getUniqueId()).put("coat", new ItemStack(Material.LEATHER_CHESTPLATE));
 
-        cache = TextureCache.load(folder.resolve("texture-cache.yml"));
+        cache = YamlTextureCache.load(folder.resolve("texture-cache.yml"));
         TrackingTaskRunner tasks = new TrackingTaskRunner();
         tags = new MainThreadItemTags(tasks, new FakeItemTags());
         SkinApplier applier = new SkinApplier(server, tasks);

@@ -16,6 +16,7 @@ import org.skysongdev.skysongwardrobe.render.RenderRouter;
 import org.skysongdev.skysongwardrobe.render.SignResult;
 import org.skysongdev.skysongwardrobe.render.SignedTexture;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
+import org.skysongdev.skysongwardrobe.render.YamlTextureCache;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.scheduling.TrackingTaskRunner;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
@@ -49,7 +50,7 @@ class NpcWardrobesTest {
     void setUp() {
         server = MockBukkit.mock();
         plugin = MockBukkit.load(SkysongWardrobe.class);
-        TextureCache cache = TextureCache.load(folder.resolve("cache.yml"));
+        TextureCache cache = YamlTextureCache.load(folder.resolve("cache.yml"));
         RenderQueue queue = RenderQueue.load(folder.resolve("queue.yml"), (skin, arms) -> new SignResult.Signed(SIGNED),
                 cache, () -> Duration.ZERO, Clock.systemUTC(), router, Logger.getAnonymousLogger());
         TrackingTaskRunner tasks = new TrackingTaskRunner();
