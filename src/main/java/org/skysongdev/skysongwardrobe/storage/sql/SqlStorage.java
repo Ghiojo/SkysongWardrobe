@@ -3,12 +3,15 @@ package org.skysongdev.skysongwardrobe.storage.sql;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinStore;
 import org.skysongdev.skysongwardrobe.mannequin.YamlMannequinStore;
 import org.skysongdev.skysongwardrobe.npc.NpcRecordStore;
+import org.skysongdev.skysongwardrobe.npc.RemovedNpcStore;
+import org.skysongdev.skysongwardrobe.npc.YamlRemovedNpcStore;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.storage.StorageBackend;
 import org.skysongdev.skysongwardrobe.storage.YamlStorage;
 import org.skysongdev.skysongwardrobe.storage.importing.DatasetImporter;
 import org.skysongdev.skysongwardrobe.storage.importing.MannequinImporter;
 import org.skysongdev.skysongwardrobe.storage.importing.NpcRecordImporter;
+import org.skysongdev.skysongwardrobe.storage.importing.RemovedNpcImporter;
 import org.skysongdev.skysongwardrobe.storage.importing.TextureImporter;
 import org.skysongdev.skysongwardrobe.storage.importing.WardrobeImporter;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
@@ -59,6 +62,11 @@ public final class SqlStorage implements StorageBackend {
     }
 
     @Override
+    public RemovedNpcStore removedNpcs() {
+        return new SqlRemovedNpcStore(database);
+    }
+
+    @Override
     public List<DatasetImporter> importers(Path dataFolder) {
         return List.of(
                 new TextureImporter(dataFolder.resolve(YamlStorage.TEXTURE_FILE), textures),
@@ -67,7 +75,10 @@ public final class SqlStorage implements StorageBackend {
                 wardrobeImporter(WardrobeKind.NPC, dataFolder),
                 new MannequinImporter(new YamlMannequinStore(YamlStorage.mannequinFolder(dataFolder), logger),
                         mannequins()),
-                new NpcRecordImporter(YamlStorage.npcFolder(dataFolder), npcRecords(), logger));
+                new NpcRecordImporter(YamlStorage.npcFolder(dataFolder), npcRecords(), logger),
+                wardrobeImporter(WardrobeKind.REMOVED_NPC, dataFolder),
+                new RemovedNpcImporter(new YamlRemovedNpcStore(
+                        YamlStorage.wardrobeFolder(dataFolder, WardrobeKind.REMOVED_NPC), logger), removedNpcs()));
     }
 
     private DatasetImporter wardrobeImporter(WardrobeKind kind, Path dataFolder) {

@@ -90,7 +90,21 @@ class WardrobeImporterTest {
     void theDatabaseBackendImportsTexturesAndEveryWardrobeKind() {
         List<String> datasets = database.importers(folder).stream().map(DatasetImporter::dataset).toList();
 
-        assertEquals(List.of("textures", "player wardrobes", "mannequin wardrobes", "npc wardrobes", "mannequins", "npc records"),
+        assertEquals(List.of("textures", "player wardrobes", "mannequin wardrobes", "npc wardrobes", "mannequins", "npc records",
+                "removed npc wardrobes", "removed npcs"),
                 datasets);
+    }
+
+    @Test
+    void removedNpcInfoFilesAreNotWardrobes() throws IOException {
+        Path removed = YamlStorage.wardrobeFolder(folder, WardrobeKind.REMOVED_NPC);
+        UUID entry = UUID.randomUUID();
+        new YamlWardrobeStore(removed, Logger.getAnonymousLogger()).write(entry, Map.of("coat", new byte[]{1}));
+        Files.writeString(removed.resolve(entry + ".info.yml"), "name: Baker\n");
+
+        ImportResult result = new WardrobeImporter(WardrobeKind.REMOVED_NPC, removed,
+                database.wardrobes(WardrobeKind.REMOVED_NPC), Logger.getAnonymousLogger()).run();
+
+        assertEquals(new ImportResult("removed npc wardrobes", 1, 0), result);
     }
 }

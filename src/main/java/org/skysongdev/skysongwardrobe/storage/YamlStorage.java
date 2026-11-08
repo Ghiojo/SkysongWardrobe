@@ -3,7 +3,9 @@ package org.skysongdev.skysongwardrobe.storage;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinStore;
 import org.skysongdev.skysongwardrobe.mannequin.YamlMannequinStore;
 import org.skysongdev.skysongwardrobe.npc.NpcRecordStore;
+import org.skysongdev.skysongwardrobe.npc.RemovedNpcStore;
 import org.skysongdev.skysongwardrobe.npc.YamlNpcRecordStore;
+import org.skysongdev.skysongwardrobe.npc.YamlRemovedNpcStore;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.render.YamlTextureCache;
 
@@ -58,6 +60,11 @@ public final class YamlStorage implements StorageBackend {
     @Override
     public NpcRecordStore npcRecords() {
         return new YamlNpcRecordStore(npcFolder(dataFolder), logger);
+    }
+
+    @Override
+    public RemovedNpcStore removedNpcs() {
+        return new YamlRemovedNpcStore(wardrobeFolder(dataFolder, WardrobeKind.REMOVED_NPC), logger);
     }
 
     public static Path npcFolder(Path dataFolder) {
