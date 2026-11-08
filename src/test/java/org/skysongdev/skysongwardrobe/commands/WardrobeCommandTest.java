@@ -53,7 +53,7 @@ class WardrobeCommandTest {
     void opensYourOwnWardrobe() throws CommandSyntaxException {
         run(alice, "wardrobe");
 
-        WardrobeMenu menu = assertInstanceOf(WardrobeMenu.class, alice.getOpenInventory().getTopInventory().getHolder(false));
+        WardrobeMenu menu = assertInstanceOf(WardrobeMenu.class, alice.getOpenInventory().getTopInventory().getHolder());
         assertEquals(alice.getUniqueId(), menu.wardrobe().owner());
     }
 
