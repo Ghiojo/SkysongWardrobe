@@ -226,8 +226,9 @@ public class SkysongWardrobe extends JavaPlugin {
         }
         try {
             npcWardrobes = NpcWardrobes.start(this, getDataFolder().toPath().resolve("npcs"), CitizensHook.skins(),
-                    new NpcWardrobes.Shared(configuration, wardrobeKinds, renderRouter, outfits, textureCache,
+                    new NpcWardrobes.Shared(configuration, wardrobeKinds, renderRouter, renderQueue, outfits, textureCache,
                             new HttpImageFetcher(BASE_SKIN_TIMEOUT), new BukkitTaskRunner(this)));
+            CitizensHook.follow(this, npcWardrobes.lifecycle());
             getLogger().info("Citizens player NPCs can now be dressed.");
         } catch (RuntimeException | LinkageError failed) {
             getLogger().log(Level.WARNING, "Could not hook into Citizens; NPCs can't be dressed.", failed);

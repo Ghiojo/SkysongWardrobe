@@ -56,7 +56,7 @@ class NpcWardrobesTest {
         OutfitRenderer outfits = new OutfitRenderer(FakeItemTags::new, mock(LayerResolver.class), cache, queue, () -> true);
         kinds = new WardrobeKinds();
         npcs = NpcWardrobes.start(plugin, folder.resolve("npcs"), skins, new NpcWardrobes.Shared(plugin.configuration(),
-                kinds, router, outfits, cache, uri -> Optional.empty(), tasks));
+                kinds, router, queue, outfits, cache, uri -> Optional.empty(), tasks));
     }
 
     @AfterEach

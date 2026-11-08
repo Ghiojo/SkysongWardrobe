@@ -1,7 +1,9 @@
 package org.skysongdev.skysongwardrobe.citizens;
 
 import net.citizensnpcs.api.CitizensAPI;
+import org.bukkit.plugin.Plugin;
 import org.skysongdev.skysongwardrobe.npc.NpcDirectory;
+import org.skysongdev.skysongwardrobe.npc.NpcLifecycle;
 import org.skysongdev.skysongwardrobe.npc.NpcSkins;
 
 /**
@@ -15,6 +17,11 @@ public final class CitizensHook {
     /** NPC skins on Citizens' main registry. */
     public static NpcSkins skins() {
         return new CitizensNpcSkins(CitizensAPI::getNPCRegistry);
+    }
+
+    /** Archives and copies NPC wardrobes as Citizens removes and copies NPCs. */
+    public static void follow(Plugin plugin, NpcLifecycle lifecycle) {
+        plugin.getServer().getPluginManager().registerEvents(new CitizensNpcListener(lifecycle), plugin);
     }
 
     /** NPC lookups on Citizens' main registry and default selection. */
