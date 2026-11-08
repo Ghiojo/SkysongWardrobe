@@ -5,6 +5,7 @@ import org.skysongdev.skysongwardrobe.storage.StorageBackend;
 import org.skysongdev.skysongwardrobe.storage.YamlStorage;
 import org.skysongdev.skysongwardrobe.storage.importing.DatasetImporter;
 import org.skysongdev.skysongwardrobe.storage.importing.TextureImporter;
+import org.skysongdev.skysongwardrobe.storage.importing.WardrobeImporter;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeStore;
 
@@ -20,12 +21,14 @@ import java.util.logging.Logger;
 public final class SqlStorage implements StorageBackend {
     private final SqlDatabase database;
     private final AutoCloseable connections;
+    private final Logger logger;
     private final TextureCache textures;
 
     /** Takes ownership of {@code connections}, which {@link #close()} closes. */
     public SqlStorage(SqlDatabase database, AutoCloseable connections, Clock clock, Logger logger) {
         this.database = database;
         this.connections = connections;
+        this.logger = logger;
         new SchemaMigrator(database, logger).migrate(WardrobeSchema.steps());
         this.textures = new SqlTextureCache(database, clock);
     }
@@ -42,7 +45,15 @@ public final class SqlStorage implements StorageBackend {
 
     @Override
     public List<DatasetImporter> importers(Path dataFolder) {
-        return List.of(new TextureImporter(dataFolder.resolve(YamlStorage.TEXTURE_FILE), textures));
+        return List.of(
+                new TextureImporter(dataFolder.resolve(YamlStorage.TEXTURE_FILE), textures),
+                wardrobeImporter(WardrobeKind.PLAYER, dataFolder),
+                wardrobeImporter(WardrobeKind.MANNEQUIN, dataFolder),
+                wardrobeImporter(WardrobeKind.NPC, dataFolder));
+    }
+
+    private DatasetImporter wardrobeImporter(WardrobeKind kind, Path dataFolder) {
+        return new WardrobeImporter(kind, YamlStorage.wardrobeFolder(dataFolder, kind), wardrobes(kind), logger);
     }
 
     @Override
