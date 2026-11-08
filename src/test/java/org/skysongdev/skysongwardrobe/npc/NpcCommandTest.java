@@ -171,7 +171,7 @@ class NpcCommandTest {
         new NpcArchive(folder.resolve("removed"), Logger.getAnonymousLogger()).store(baker, worn, java.time.Instant.now());
         commands.run(staff, "npc removed");
 
-        assertTrue(staff.getOpenInventory().getTopInventory().getHolder(false) instanceof RemovedNpcsMenu);
+        assertTrue(staff.getOpenInventory().getTopInventory().getHolder() instanceof RemovedNpcsMenu);
     }
 
     @Test
