@@ -89,7 +89,7 @@ class GalleryMenuTest {
     void titleNamesTheOwner() {
         menu(List.of()).open(viewer);
 
-        assertSame(GalleryMenu.class, viewer.getOpenInventory().getTopInventory().getHolder(false).getClass());
+        assertSame(GalleryMenu.class, viewer.getOpenInventory().getTopInventory().getHolder().getClass());
         assertEquals("Alice's gallery", PlainTextComponentSerializer.plainText().serialize(viewer.getOpenInventory().title()));
     }
 
