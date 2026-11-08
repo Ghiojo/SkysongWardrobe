@@ -70,7 +70,7 @@ public final class WardrobeMenu implements InventoryHolder {
     /** The wardrobe menu a player is looking at, if any. */
     public static Optional<WardrobeMenu> of(InventoryView view) {
         Inventory top = view == null ? null : view.getTopInventory();
-        return top != null && top.getHolder(false) instanceof WardrobeMenu menu ? Optional.of(menu) : Optional.empty();
+        return top != null && top.getHolder() instanceof WardrobeMenu menu ? Optional.of(menu) : Optional.empty();
     }
 
     public Wardrobe wardrobe() {

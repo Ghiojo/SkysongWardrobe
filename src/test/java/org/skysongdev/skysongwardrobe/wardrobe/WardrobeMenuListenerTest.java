@@ -2,6 +2,7 @@ package org.skysongdev.skysongwardrobe.wardrobe;
 
 import org.bukkit.Material;
 import org.bukkit.event.Event;
+import org.bukkit.event.HandlerList;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
@@ -48,11 +49,14 @@ class WardrobeMenuListenerTest {
         player = server.addPlayer();
         wardrobes = new WardrobeRepository(folder, Logger.getAnonymousLogger());
         mannequinWardrobes = new WardrobeRepository(folder.resolve("mannequins"), Logger.getAnonymousLogger());
+        // Only the listener under test may handle the menu, not the plugin's own one.
+        HandlerList.unregisterAll(plugin);
         server.getPluginManager().registerEvents(
                 new WardrobeMenuListener(WardrobeKinds.of(wardrobes, mannequinWardrobes, server), plugin.configuration(),
                         server, Logger.getAnonymousLogger()), plugin);
         menu = new WardrobeMenu(wardrobes.load(player.getUniqueId()), WardrobeMenuTest.layout(), WardrobeMenuTest.tags());
         player.openInventory(menu.getInventory());
+        server.getPluginManager().clearEvents();
     }
 
     @AfterEach
@@ -78,7 +82,7 @@ class WardrobeMenuListenerTest {
         click(COAT, ClickType.LEFT, InventoryAction.PLACE_ALL);
 
         assertEquals(Material.DIAMOND, view().getCursor().getType());
-        assertNotNull(player.nextComponentMessage());
+        assertNotNull(player.nextActionBar());
     }
 
     @Test
@@ -93,13 +97,15 @@ class WardrobeMenuListenerTest {
 
     @Test
     void shiftClickFromTheInventoryUsesTheSlotRules() {
-        player.getInventory().setItem(0, new ItemStack(Material.LEATHER_BOOTS, 2));
-        InventoryClickEvent event = new InventoryClickEvent(view(), InventoryType.SlotType.QUICKBAR, rawSlotOfHotbar(0),
+        // Set and read the item through the view, which maps the raw slot to the player's inventory.
+        int raw = rawSlotOfHotbar(0);
+        view().setItem(raw, new ItemStack(Material.LEATHER_BOOTS, 2));
+        InventoryClickEvent event = new InventoryClickEvent(view(), InventoryType.SlotType.QUICKBAR, raw,
                 ClickType.SHIFT_LEFT, InventoryAction.MOVE_TO_OTHER_INVENTORY);
         server.getPluginManager().callEvent(event);
 
         assertTrue(event.isCancelled());
-        assertEquals(1, player.getInventory().getItem(0).getAmount());
+        assertEquals(1, view().getItem(raw).getAmount());
         assertEquals(Material.LEATHER_BOOTS, menu.getInventory().getItem(BOOTS).getType());
     }
 

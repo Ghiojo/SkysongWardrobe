@@ -52,7 +52,7 @@ class GalleryCommandTest {
     void opensYourOwnGallery() throws CommandSyntaxException {
         commands.run(alice, "gallery");
 
-        assertInstanceOf(GalleryMenu.class, alice.getOpenInventory().getTopInventory().getHolder(false));
+        assertInstanceOf(GalleryMenu.class, alice.getOpenInventory().getTopInventory().getHolder());
         assertEquals(Material.PAPER, alice.getOpenInventory().getTopInventory().getItem(0).getType());
         assertNull(alice.getOpenInventory().getTopInventory().getItem(1));
     }
