@@ -3,6 +3,9 @@ package org.skysongdev.skysongwardrobe.config;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinSkins;
+import org.skysongdev.skysongwardrobe.storage.InvalidStorageSettingsException;
+import org.skysongdev.skysongwardrobe.storage.StorageSettings;
+import org.skysongdev.skysongwardrobe.storage.StorageSettingsParser;
 
 import java.io.File;
 import java.io.InputStream;
@@ -60,6 +63,18 @@ public final class PluginConfiguration {
         }
 
         mannequinSkins = MannequinSkins.load(file(MANNEQUIN_SKINS_FOLDER).toPath(), plugin.getLogger());
+    }
+
+    /**
+     * The {@code storage:} section of config.yml, read fresh. It is read only at start: unlike
+     * everything else here, {@link #reload()} never changes where the data goes.
+     */
+    public StorageSettings storageSettings() throws InvalidStorageSettingsException {
+        saveDefault(CONFIG_FILE);
+        StorageSettingsParser parser = new StorageSettingsParser();
+        StorageSettings storage = parser.parse(YamlConfiguration.loadConfiguration(file(CONFIG_FILE)));
+        parser.warnings().forEach(warning -> plugin.getLogger().warning(CONFIG_FILE + ": " + warning));
+        return storage;
     }
 
     public WardrobeSettings settings() {
