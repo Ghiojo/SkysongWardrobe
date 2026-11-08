@@ -45,6 +45,11 @@ public final class YamlTextureCache implements TextureCache {
         return Optional.ofNullable(byHash.get(hash));
     }
 
+    /** A copy of every stored skin by hash, for importing them into a database. */
+    public synchronized Map<String, SignedTexture> entries() {
+        return Map.copyOf(byHash);
+    }
+
     @Override
     public synchronized boolean isOwn(SignedTexture texture) {
         return ownValues.contains(texture.value());

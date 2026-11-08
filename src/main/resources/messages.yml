@@ -89,6 +89,17 @@ reload:
   done: "<prefix> <green>Reloaded config.yml, messages.yml and wardrobe.yml."
   layout-broken: "<prefix> <red>Reloaded, but wardrobe.yml has errors, so the wardrobe stays closed. The console lists them."
 
+# /sw storage import, which copies the YAML files into the database storage.type names.
+# Placeholders: <dataset>, <imported>, <skipped>
+storage:
+  console-only: "<prefix> <red>Run /sw storage import from the server console."
+  nothing-to-import: "<prefix> <red>storage.type is yaml, so the data already is in the files. Set it to sqlite or mysql and restart first."
+  import-running: "<prefix> <red>An import is already running."
+  import-started: "<prefix> <gray>Importing the YAML files into the database. The files are not changed."
+  import-done: "<prefix> <green><dataset>: <imported> imported, <skipped> already there."
+  import-failed: "<prefix> <red><dataset>: the import failed. The console has the reason; running it again is safe."
+  import-finished: "<prefix> <gray>Import finished."
+
 render:
   # Sent when a new outfit waits for MineSkin to sign it.
   queued: "<prefix> <gray>Your new look is being prepared and will appear shortly."

@@ -57,6 +57,7 @@ player only ever has one look waiting.
 | `/sw npc [number]` | Opens a Citizens NPC's wardrobe | an NPC permission (`.other` for NPCs you don't own) |
 | `/sw npc removed` | Takes items back from removed NPCs' wardrobes | the `.other` variant of an NPC permission |
 | `/sw reload` | Reloads every config file | `skysongwardrobe.admin` |
+| `/sw storage import` | Copies the YAML files into the database `storage.type` names (console only) | `skysongwardrobe.admin` |
 
 The gallery and apply permissions are lists in `config.yml`. Holding any one of them is
 enough, so permissions from other plugins can be listed there. By default they are
