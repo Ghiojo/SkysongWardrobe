@@ -44,3 +44,25 @@ npcs:
   # The .other variant (such as skysongwardrobe.npc.other) reaches every NPC. Needs Citizens.
   permissions:
     - skysongwardrobe.npc
+
+storage:
+  # Where wardrobes, mannequins, NPCs and signed skins are kept: yaml, sqlite or mysql.
+  # yaml is plain files. sqlite is one local database file, with nothing to set up.
+  # mysql also works with MariaDB. Skin galleries always stay as files in skins/.
+  # Read only at start: restart the server after changing it. Changing it does not move
+  # any data; see the README for how to import the files into a database.
+  type: yaml
+  sqlite:
+    # The database file, inside the plugin folder.
+    file: data.db
+  mysql:
+    host: "localhost"
+    port: "3306"
+    user: "root"
+    password: ""
+    database_name: "skysong"
+    # Put before every table name, so these tables never clash with another plugin's
+    # (SkysongStats uses ss_). Letters, digits and _ only.
+    table-prefix: "sw_"
+    # The most connections open at once.
+    pool-size: 4
