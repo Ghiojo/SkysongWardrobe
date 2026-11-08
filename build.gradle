@@ -35,6 +35,18 @@ repositories {
             includeGroup 'org.mineskin'
         }
     }
+    // The Citizens repository only serves Citizens, for the optional NPC wardrobes.
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'citizens'
+                url = 'https://maven.citizensnpcs.co/repo'
+            }
+        }
+        filter {
+            includeGroup 'net.citizensnpcs'
+        }
+    }
     // EngineHub serves WorldGuard and WorldEdit, for the optional mannequin region flags.
     maven {
         name = 'enginehub'
@@ -65,6 +77,15 @@ dependencies {
         exclude group: 'org.bukkit'
         exclude group: 'org.spigotmc'
         exclude group: 'io.papermc.paper'
+    }
+    // Citizens is optional: with it, player NPCs get a wardrobe. 2.0.43 is the last Citizens
+    // built for 1.21.11; citizens-main carries the API too, and its own dependencies all ship
+    // inside the Citizens jar, so none are pulled in. It ships on the server, so it is never shaded.
+    compileOnly('net.citizensnpcs:citizens-main:2.0.43-SNAPSHOT') {
+        transitive = false
+    }
+    testImplementation('net.citizensnpcs:citizens-main:2.0.43-SNAPSHOT') {
+        transitive = false
     }
     // The official MineSkin client signs rendered skins. Paper already ships Gson and Guava,
     // so only the client itself is bundled.
