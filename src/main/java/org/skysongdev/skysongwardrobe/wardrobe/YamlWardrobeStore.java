@@ -65,6 +65,11 @@ public final class YamlWardrobeStore implements WardrobeStore {
         file.save(file(owner).toFile());
     }
 
+    /** Whether the owner's file, as last read, has slots whose text isn't Base64. */
+    public synchronized boolean keepsUndecodable(UUID owner) {
+        return undecodable.containsKey(owner);
+    }
+
     /** Keeping aside renames the file to {@code <uuid>.broken.yml}. */
     @Override
     public synchronized void delete(UUID owner, boolean keepAside) throws IOException {
