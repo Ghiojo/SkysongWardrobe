@@ -106,7 +106,8 @@ tasks.withType(JavaCompile).configureEach {
 test {
     useJUnitPlatform()
     testLogging {
-        events 'failed'
+        // Skipped shows tests MockBukkit can't run (UnimplementedOperationException), so none hide.
+        events 'failed', 'skipped'
         exceptionFormat 'full'
     }
 }

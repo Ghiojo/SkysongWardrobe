@@ -38,7 +38,7 @@ public final class WardrobeMenuListener implements Listener {
 
     @EventHandler
     public void onClick(InventoryClickEvent event) {
-        if (!(event.getInventory().getHolder(false) instanceof WardrobeMenu menu)
+        if (!(event.getInventory().getHolder() instanceof WardrobeMenu menu)
                 || !(event.getWhoClicked() instanceof Player player)) {
             return;
         }
@@ -71,7 +71,7 @@ public final class WardrobeMenuListener implements Listener {
 
     @EventHandler
     public void onDrag(InventoryDragEvent event) {
-        if (event.getInventory().getHolder(false) instanceof WardrobeMenu
+        if (event.getInventory().getHolder() instanceof WardrobeMenu
                 && event.getRawSlots().stream().anyMatch(slot -> slot < event.getInventory().getSize())) {
             event.setCancelled(true);
         }
@@ -79,7 +79,7 @@ public final class WardrobeMenuListener implements Listener {
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        if (!(event.getInventory().getHolder(false) instanceof WardrobeMenu menu) || !menu.changed()) {
+        if (!(event.getInventory().getHolder() instanceof WardrobeMenu menu) || !menu.changed()) {
             return;
         }
         kinds.get(menu.kind()).ifPresent(kind -> kind.changed().accept(menu.wardrobe().owner()));

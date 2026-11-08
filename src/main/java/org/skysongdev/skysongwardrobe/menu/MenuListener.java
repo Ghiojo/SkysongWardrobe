@@ -9,7 +9,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 public final class MenuListener implements Listener {
     @EventHandler
     public void onClick(InventoryClickEvent event) {
-        if (event.getInventory().getHolder(false) instanceof GalleryMenu menu) {
+        if (event.getInventory().getHolder() instanceof GalleryMenu menu) {
             // Cancelled for clicks in the player's own inventory too, so shift-clicks can't move items in.
             event.setCancelled(true);
             if (event.getClickedInventory() == event.getInventory()) {
@@ -20,7 +20,7 @@ public final class MenuListener implements Listener {
 
     @EventHandler
     public void onDrag(InventoryDragEvent event) {
-        if (event.getInventory().getHolder(false) instanceof GalleryMenu) {
+        if (event.getInventory().getHolder() instanceof GalleryMenu) {
             event.setCancelled(true);
         }
     }
