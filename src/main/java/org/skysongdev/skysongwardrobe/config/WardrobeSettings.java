@@ -15,6 +15,8 @@ import java.util.Objects;
  * @param mineSkinApiKey          the MineSkin API key, empty when none is set
  * @param skinVisibility          who may find the skins uploaded to MineSkin
  * @param mannequins              who may place mannequins, and how many
+ * @param npcPermissions          holding any one of these lets a player dress the Citizens NPCs
+ *                                they own; the {@code .other} variant reaches every NPC
  */
 public record WardrobeSettings(boolean verbose,
                                List<String> galleryPermissions,
@@ -24,7 +26,8 @@ public record WardrobeSettings(boolean verbose,
                                int uploadCooldownSeconds,
                                String mineSkinApiKey,
                                SkinVisibility skinVisibility,
-                               MannequinSettings mannequins) {
+                               MannequinSettings mannequins,
+                               List<String> npcPermissions) {
 
     public WardrobeSettings {
         galleryPermissions = List.copyOf(galleryPermissions);
@@ -32,6 +35,7 @@ public record WardrobeSettings(boolean verbose,
         Objects.requireNonNull(mineSkinApiKey, "mineSkinApiKey");
         Objects.requireNonNull(skinVisibility, "skinVisibility");
         Objects.requireNonNull(mannequins, "mannequins");
+        npcPermissions = List.copyOf(npcPermissions);
     }
 
     /** Whether a MineSkin API key is set, which skin rendering needs. */

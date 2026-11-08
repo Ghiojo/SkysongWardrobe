@@ -34,6 +34,7 @@ class SettingsParserTest {
         assertFalse(settings.hasMineSkinApiKey());
         assertEquals(SkinVisibility.UNLISTED, settings.skinVisibility());
         assertEquals(new MannequinSettings(List.of("skysongwardrobe.mannequin"), 0, 15), settings.mannequins());
+        assertEquals(List.of("skysongwardrobe.npc"), settings.npcPermissions());
         assertTrue(parser.warnings().isEmpty());
     }
 
@@ -56,6 +57,8 @@ class SettingsParserTest {
                   permissions: [skysongstats.carpenter]
                   max-per-player: 3
                   max-per-chunk: 0
+                npcs:
+                  permissions: [skysongeconomy.shopkeeper]
                 """));
 
         assertTrue(settings.verbose());
@@ -68,6 +71,7 @@ class SettingsParserTest {
         assertTrue(settings.hasMineSkinApiKey());
         assertEquals(SkinVisibility.PRIVATE, settings.skinVisibility());
         assertEquals(new MannequinSettings(List.of("skysongstats.carpenter"), 3, 0), settings.mannequins());
+        assertEquals(List.of("skysongeconomy.shopkeeper"), settings.npcPermissions());
         assertTrue(parser.warnings().isEmpty());
     }
 
