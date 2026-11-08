@@ -50,7 +50,11 @@ public final class NpcLifecycle {
                 logger.info("NPC " + npc.name() + " (" + npc.number() + ") was removed; its wardrobe is kept as removed"
                         + " entry " + archive.store(npc, wardrobe, clock.instant()) + ", see /sw npc removed.");
             }
-            wardrobes.delete(npc.id());
+            // Archived first: the delete is only queued once the copy is safely written.
+            wardrobes.delete(npc.id()).exceptionally(failed -> {
+                logger.log(Level.WARNING, "Could not delete the wardrobe of removed NPC " + npc.id() + ".", failed);
+                return null;
+            });
             records.delete(npc.id());
         } catch (IOException failed) {
             logger.log(Level.SEVERE, "NPC " + npc.id() + " was removed, but its wardrobe could not be archived."
@@ -65,7 +69,10 @@ public final class NpcLifecycle {
         from.items().forEach(to::put);
         try {
             if (!from.items().isEmpty()) {
-                wardrobes.save(to);
+                wardrobes.save(to).exceptionally(failed -> {
+                    logger.log(Level.WARNING, "Could not save the wardrobe copied to NPC " + copy + ".", failed);
+                    return null;
+                });
             }
             Optional<NpcRecord> record = records.find(original);
             if (record.isPresent()) {

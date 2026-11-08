@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockbukkit.mockbukkit.MockBukkit;
+import org.skysongdev.skysongwardrobe.storage.AsyncWriter;
 import org.skysongdev.skysongwardrobe.storage.StorageException;
 
 import java.io.IOException;
@@ -19,6 +20,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -102,6 +104,58 @@ class WardrobeRepositoryTest {
     }
 
     @Test
+    void aReadAfterAQueuedSaveSeesIt() {
+        ItemStack coat = new ItemStack(Material.LEATHER_CHESTPLATE);
+        try (AsyncWriter writer = AsyncWriter.background()) {
+            WardrobeRepository background = new WardrobeRepository(new YamlWardrobeStore(folder, Logger.getAnonymousLogger()),
+                    writer, Logger.getAnonymousLogger());
+            Wardrobe wardrobe = background.load(OWNER);
+            wardrobe.put("coat", coat);
+            background.save(wardrobe);
+            background.unload(OWNER);
+
+            assertEquals(coat, background.load(OWNER).item("coat").orElseThrow());
+        }
+    }
+
+    @Test
+    void aSaveCopiesTheItemsWhenAsked() {
+        try (AsyncWriter writer = AsyncWriter.background()) {
+            WardrobeRepository background = new WardrobeRepository(new YamlWardrobeStore(folder, Logger.getAnonymousLogger()),
+                    writer, Logger.getAnonymousLogger());
+            Wardrobe wardrobe = background.load(OWNER);
+            wardrobe.put("coat", new ItemStack(Material.LEATHER_CHESTPLATE));
+            background.save(wardrobe);
+            wardrobe.put("boots", new ItemStack(Material.LEATHER_BOOTS));
+            background.flush().join();
+
+            assertTrue(YamlConfiguration.loadConfiguration(folder.resolve(OWNER + ".yml").toFile()).isString("slots.coat"));
+            assertFalse(YamlConfiguration.loadConfiguration(folder.resolve(OWNER + ".yml").toFile()).contains("slots.boots"));
+        }
+    }
+
+    @Test
+    void aFailedSaveFailsItsFuture() {
+        WardrobeRepository failing = new WardrobeRepository(new WardrobeStore() {
+            @Override
+            public Map<String, byte[]> read(UUID owner) {
+                return Map.of();
+            }
+
+            @Override
+            public void write(UUID owner, Map<String, byte[]> slots) throws IOException {
+                throw new IOException("disk full");
+            }
+
+            @Override
+            public void delete(UUID owner, boolean keepAside) {
+            }
+        }, AsyncWriter.direct(), Logger.getAnonymousLogger());
+
+        assertTrue(failing.save(failing.load(OWNER)).isCompletedExceptionally());
+    }
+
+    @Test
     void aStoreThatCantBeReadIsAnErrorNotAnEmptyWardrobe() {
         WardrobeRepository failing = new WardrobeRepository(new WardrobeStore() {
             @Override
@@ -116,7 +170,7 @@ class WardrobeRepositoryTest {
             @Override
             public void delete(UUID owner, boolean keepAside) {
             }
-        }, Logger.getAnonymousLogger());
+        }, AsyncWriter.direct(), Logger.getAnonymousLogger());
 
         assertThrows(StorageException.class, () -> failing.load(OWNER));
     }

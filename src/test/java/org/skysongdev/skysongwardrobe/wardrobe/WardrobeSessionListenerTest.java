@@ -1,6 +1,8 @@
 package org.skysongdev.skysongwardrobe.wardrobe;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
+import org.bukkit.event.player.AsyncPlayerPreLoginEvent;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,8 +13,13 @@ import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import org.skysongdev.skysongwardrobe.SkysongWardrobe;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
 
+import java.net.InetAddress;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WardrobeSessionListenerTest {
     private ServerMock server;
@@ -27,6 +34,27 @@ class WardrobeSessionListenerTest {
     @AfterEach
     void tearDown() {
         MockBukkit.unmock();
+    }
+
+    @Test
+    void theWardrobeIsReadWhileThePlayerLogsIn() throws Exception {
+        UUID id = UUID.randomUUID();
+        AsyncPlayerPreLoginEvent login = new AsyncPlayerPreLoginEvent("Alex", InetAddress.getLoopbackAddress(), id);
+
+        CompletableFuture.runAsync(() -> server.getPluginManager().callEvent(login)).join();
+
+        assertTrue(plugin.wardrobes().loaded(id).isPresent());
+    }
+
+    @Test
+    void aRefusedLoginReadsNothing() throws Exception {
+        UUID id = UUID.randomUUID();
+        AsyncPlayerPreLoginEvent login = new AsyncPlayerPreLoginEvent("Alex", InetAddress.getLoopbackAddress(), id);
+        login.disallow(AsyncPlayerPreLoginEvent.Result.KICK_BANNED, Component.text("banned"));
+
+        CompletableFuture.runAsync(() -> server.getPluginManager().callEvent(login)).join();
+
+        assertTrue(plugin.wardrobes().loaded(id).isEmpty());
     }
 
     @Test
