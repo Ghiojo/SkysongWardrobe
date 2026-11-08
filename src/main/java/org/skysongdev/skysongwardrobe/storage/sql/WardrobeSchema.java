@@ -11,6 +11,7 @@ public final class WardrobeSchema {
         return List.of(
                 new SchemaStep(1, "texture cache", SqlTextureCache::createTables),
                 new SchemaStep(2, "wardrobes", SqlWardrobeStore::createTables),
-                new SchemaStep(3, "mannequins", SqlMannequinStore::createTables));
+                new SchemaStep(3, "mannequins", SqlMannequinStore::createTables),
+                new SchemaStep(4, "npc records", SqlNpcRecordStore::createTables));
     }
 }

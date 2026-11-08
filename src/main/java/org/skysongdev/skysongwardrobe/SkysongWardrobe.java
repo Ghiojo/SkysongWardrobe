@@ -46,6 +46,7 @@ import org.skysongdev.skysongwardrobe.mannequin.OwnerAccess;
 import org.skysongdev.skysongwardrobe.mannequin.PaperMannequinBodies;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinSpawnGuard;
 import org.skysongdev.skysongwardrobe.mannequin.PaperMannequinSpawner;
+import org.skysongdev.skysongwardrobe.npc.NpcRepository;
 import org.skysongdev.skysongwardrobe.npc.NpcWardrobes;
 import org.skysongdev.skysongwardrobe.menu.MenuListener;
 import org.skysongdev.skysongwardrobe.prompt.DialogConfirmationPrompt;
@@ -244,7 +245,8 @@ public class SkysongWardrobe extends JavaPlugin {
             npcWardrobes = NpcWardrobes.start(this, getDataFolder().toPath().resolve("npcs"), CitizensHook.skins(),
                     new NpcWardrobes.Shared(configuration, wardrobeKinds, renderRouter, renderQueue, outfits, textureCache,
                             new HttpImageFetcher(BASE_SKIN_TIMEOUT), new BukkitTaskRunner(this)),
-                    new WardrobeRepository(storage.wardrobes(WardrobeKind.NPC), storageWriter, getLogger()));
+                    new WardrobeRepository(storage.wardrobes(WardrobeKind.NPC), storageWriter, getLogger()),
+                    new NpcRepository(storage.npcRecords()));
             CitizensHook.follow(this, npcWardrobes.lifecycle());
             getLogger().info("Citizens player NPCs can now be dressed.");
         } catch (RuntimeException | LinkageError failed) {
