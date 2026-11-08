@@ -56,13 +56,13 @@ public final class UploadCommand implements SubCommand {
         String typedId = StringArgumentType.getString(context, ID);
         Optional<SkinId> id = SkinId.parse(typedId);
         if (id.isEmpty()) {
-            player.sendMessage(configuration.messages().get("upload.invalid-id", Map.of("id", typedId)));
+            configuration.messages().send(player, "upload.invalid-id", Map.of("id", typedId));
             return 0;
         }
         String[] words = StringArgumentType.getString(context, REST).trim().split("\\s+");
         Optional<URI> link = SkinDownloader.httpLink(words[0]);
         if (link.isEmpty()) {
-            player.sendMessage(configuration.messages().get("upload.invalid-link", Map.of("link", words[0])));
+            configuration.messages().send(player, "upload.invalid-link", Map.of("link", words[0]));
             return 0;
         }
         Optional<Material> icon = words.length > 1 ? Icons.parse(words[1]) : Optional.empty();

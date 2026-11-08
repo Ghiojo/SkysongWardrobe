@@ -52,17 +52,17 @@ public final class DeleteCommand implements SubCommand {
         Optional<SkinId> id = SkinId.parse(typed);
         Optional<PlayerGallery> gallery = galleries.existing(player.getUniqueId());
         if (id.isEmpty() || gallery.isEmpty() || gallery.get().entry(id.get()).isEmpty()) {
-            player.sendMessage(configuration.messages().get("delete.not-found", Map.of("id", typed)));
+            configuration.messages().send(player, "delete.not-found", Map.of("id", typed));
             return 0;
         }
         try {
             archive.delete(gallery.get(), id.get());
         } catch (IOException failed) {
             logger.log(Level.WARNING, "Could not delete " + id.get() + " from the gallery of " + player.getName() + ".", failed);
-            player.sendMessage(configuration.messages().get("delete.error", Map.of("id", typed)));
+            configuration.messages().send(player, "delete.error", Map.of("id", typed));
             return 0;
         }
-        player.sendMessage(configuration.messages().get("delete.done", Map.of("id", id.get().value())));
+        configuration.messages().send(player, "delete.done", Map.of("id", id.get().value()));
         return Command.SINGLE_SUCCESS;
     }
 }

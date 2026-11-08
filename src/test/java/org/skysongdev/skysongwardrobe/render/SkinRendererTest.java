@@ -87,7 +87,7 @@ class SkinRendererTest {
         renderer.render(player);
 
         assertTrue(queue.isWaiting(player.getUniqueId()));
-        assertEquals("[Wardrobe] Your new look is being prepared and will appear shortly.", nextMessage());
+        assertEquals("[Wardrobe] Your new look is being prepared and will appear shortly.", nextActionBar());
 
         queue.runNext();
 
@@ -117,12 +117,12 @@ class SkinRendererTest {
         renderer.render(player);
         queue.runNext();
         when(layers.layers(anyList())).thenReturn(List.of());
-        player.nextMessage();
+        player.nextActionBar();
 
         renderer.render(player);
 
         assertEquals(Optional.of(MOJANG), PlayerSkins.current(player));
-        assertNull(player.nextMessage());
+        assertNull(player.nextActionBar());
     }
 
     @Test
@@ -183,8 +183,8 @@ class SkinRendererTest {
         plugin.configuration().reload();
     }
 
-    private String nextMessage() {
-        return PlainTextComponentSerializer.plainText().serialize(player.nextComponentMessage());
+    private String nextActionBar() {
+        return PlainTextComponentSerializer.plainText().serialize(player.nextActionBar());
     }
 
     private static BufferedImage solid(Color color) {

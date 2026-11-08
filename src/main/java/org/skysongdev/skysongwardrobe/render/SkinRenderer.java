@@ -73,7 +73,7 @@ public final class SkinRenderer {
     private void tellQueued(UUID owner) {
         Player online = server.getPlayer(owner);
         if (online != null) {
-            online.sendMessage(configuration.messages().get("render.queued"));
+            configuration.messages().send(online, "render.queued");
         }
     }
 }

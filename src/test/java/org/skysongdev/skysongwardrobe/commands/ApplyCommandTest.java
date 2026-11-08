@@ -20,7 +20,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.skysongdev.skysongwardrobe.commands.GalleryCommandFixture.galleryWith;
-import static org.skysongdev.skysongwardrobe.commands.GalleryCommandFixture.nextMessage;
+import static org.skysongdev.skysongwardrobe.commands.GalleryCommandFixture.nextActionBar;
 
 class ApplyCommandTest {
     private ServerMock server;
@@ -56,13 +56,13 @@ class ApplyCommandTest {
         commands.run(alice, "apply Cape regular");
 
         assertEquals(Optional.of(alice.getUniqueId() + ":cape"), tags.layer(null, LayerKind.REGULAR));
-        assertEquals("[Wardrobe] Applied Alice:cape to the item in your hand.", nextMessage(alice));
+        assertEquals("[Wardrobe] Applied Alice:cape to the item in your hand.", nextActionBar(alice));
     }
 
     @Test
     void anotherPlayersSkinNeedsOther() throws CommandSyntaxException {
         commands.run(alice, "apply Bob:hood dyed");
-        assertEquals("[Wardrobe] You can only apply skins from your own gallery.", nextMessage(alice));
+        assertEquals("[Wardrobe] You can only apply skins from your own gallery.", nextActionBar(alice));
         assertEquals(Optional.empty(), tags.layer(null, LayerKind.DYABLE));
 
         alice.addAttachment(plugin, "skysongwardrobe.apply.other", true);
@@ -80,29 +80,29 @@ class ApplyCommandTest {
     @Test
     void refusesMissingEntriesPlayersLayersAndPlainItems() throws CommandSyntaxException {
         commands.run(alice, "apply scarf regular");
-        assertEquals("[Wardrobe] Alice's gallery has no scarf.", nextMessage(alice));
+        assertEquals("[Wardrobe] Alice's gallery has no scarf.", nextActionBar(alice));
 
         commands.run(alice, "apply Nobody:cape regular");
-        assertEquals("[Wardrobe] No player called Nobody has played here.", nextMessage(alice));
+        assertEquals("[Wardrobe] No player called Nobody has played here.", nextActionBar(alice));
 
         commands.run(alice, "apply cape glowing");
-        assertEquals("[Wardrobe] The layer must be regular or dyed.", nextMessage(alice));
+        assertEquals("[Wardrobe] The layer must be regular or dyed.", nextActionBar(alice));
 
         alice.getInventory().setItemInMainHand(new ItemStack(Material.STICK));
         commands.run(alice, "apply cape regular");
-        assertEquals("[Wardrobe] Hold a SkysongItems item in your main hand.", nextMessage(alice));
+        assertEquals("[Wardrobe] Hold a SkysongItems item in your main hand.", nextActionBar(alice));
         assertEquals(Optional.empty(), tags.layer(null, LayerKind.REGULAR));
     }
 
     @Test
     void unapplyRemovesTheLayer() throws CommandSyntaxException {
         commands.run(alice, "apply cape regular");
-        nextMessage(alice);
+        nextActionBar(alice);
 
         commands.run(alice, "unapply regular");
-        assertEquals("[Wardrobe] Removed that layer from the item in your hand.", nextMessage(alice));
+        assertEquals("[Wardrobe] Removed that layer from the item in your hand.", nextActionBar(alice));
         commands.run(alice, "unapply regular");
-        assertEquals("[Wardrobe] The item in your hand has no such layer.", nextMessage(alice));
+        assertEquals("[Wardrobe] The item in your hand has no such layer.", nextActionBar(alice));
     }
 
     @Test

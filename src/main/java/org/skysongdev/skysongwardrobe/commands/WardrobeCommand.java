@@ -77,7 +77,7 @@ public final class WardrobeCommand {
         Player online = server.getPlayerExact(typed);
         Optional<OfflinePlayer> owner = online != null ? Optional.of(online) : Optional.ofNullable(server.getOfflinePlayerIfCached(typed));
         if (owner.isEmpty()) {
-            viewer.sendMessage(configuration.messages().get("wardrobe.unknown-player", Map.of("player", typed)));
+            configuration.messages().send(viewer, "wardrobe.unknown-player", Map.of("player", typed));
             return 0;
         }
         open(viewer, owner.get().getUniqueId());
@@ -87,7 +87,7 @@ public final class WardrobeCommand {
     private void open(Player viewer, UUID owner) {
         Optional<WardrobeLayout> layout = configuration.layout();
         if (layout.isEmpty()) {
-            viewer.sendMessage(configuration.messages().get("wardrobe.closed"));
+            configuration.messages().send(viewer, "wardrobe.closed");
             return;
         }
         viewer.openInventory(new WardrobeMenu(wardrobes.load(owner), layout.get(), tags.get()).getInventory());

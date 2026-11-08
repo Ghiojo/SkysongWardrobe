@@ -66,7 +66,7 @@ public final class GalleryCommand implements SubCommand {
         String typed = StringArgumentType.getString(context, PLAYER);
         Optional<OfflinePlayer> owner = find(typed);
         if (owner.isEmpty()) {
-            viewer.sendMessage(configuration.messages().get("gallery.unknown-player", Map.of("player", typed)));
+            configuration.messages().send(viewer, "gallery.unknown-player", Map.of("player", typed));
             return 0;
         }
         String name = owner.get().getName() != null ? owner.get().getName() : typed;

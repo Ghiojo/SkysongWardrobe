@@ -20,7 +20,7 @@ public final class ReloadCommand implements SubCommand {
                 .executes(context -> {
                     configuration.reload();
                     String key = configuration.layout().isPresent() ? "reload.done" : "reload.layout-broken";
-                    context.getSource().getSender().sendMessage(configuration.messages().get(key));
+                    configuration.messages().send(context.getSource().getSender(), key);
                     return Command.SINGLE_SUCCESS;
                 });
     }

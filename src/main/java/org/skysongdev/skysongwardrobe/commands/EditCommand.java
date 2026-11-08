@@ -80,7 +80,7 @@ public final class EditCommand implements SubCommand {
         String typed = StringArgumentType.getString(context, VALUE);
         Optional<Material> icon = Icons.parse(typed);
         if (icon.isEmpty()) {
-            context.getSource().getSender().sendMessage(configuration.messages().get("edit.invalid-icon", Map.of("icon", typed)));
+            configuration.messages().send(context.getSource().getSender(), "edit.invalid-icon", Map.of("icon", typed));
             return 0;
         }
         return update(context, "edit.icon-done", entry -> entry.withIcon(icon.get()));
@@ -95,7 +95,7 @@ public final class EditCommand implements SubCommand {
             return 0;
         }
         if (link.isEmpty()) {
-            player.sendMessage(configuration.messages().get("upload.invalid-link", Map.of("link", typed)));
+            configuration.messages().send(player, "upload.invalid-link", Map.of("link", typed));
             return 0;
         }
         uploader.relink(player, id.get(), link.get());
@@ -111,7 +111,7 @@ public final class EditCommand implements SubCommand {
         Optional<PlayerGallery> gallery = galleries.existing(player.getUniqueId());
         Optional<SkinEntry> entry = gallery.flatMap(g -> g.entry(id.get()));
         if (entry.isEmpty()) {
-            player.sendMessage(configuration.messages().get("edit.not-found", Map.of("id", id.get().value())));
+            configuration.messages().send(player, "edit.not-found", Map.of("id", id.get().value()));
             return 0;
         }
         SkinEntry changed = change.apply(entry.get());
@@ -119,12 +119,12 @@ public final class EditCommand implements SubCommand {
             gallery.get().update(changed);
         } catch (IOException failed) {
             logger.log(Level.WARNING, "Could not edit " + id.get() + " in the gallery of " + player.getName() + ".", failed);
-            player.sendMessage(configuration.messages().get("edit.error", Map.of("id", id.get().value())));
+            configuration.messages().send(player, "edit.error", Map.of("id", id.get().value()));
             return 0;
         }
-        player.sendMessage(configuration.messages().get(doneKey, Map.of(
+        configuration.messages().send(player, doneKey, Map.of(
                 "id", changed.id().value(), "name", changed.name(),
-                "icon", changed.icon().map(Material::name).orElse(""))));
+                "icon", changed.icon().map(Material::name).orElse("")));
         return Command.SINGLE_SUCCESS;
     }
 
@@ -133,7 +133,7 @@ public final class EditCommand implements SubCommand {
         String typed = StringArgumentType.getString(context, ID);
         Optional<SkinId> id = SkinId.parse(typed);
         if (id.isEmpty()) {
-            context.getSource().getSender().sendMessage(configuration.messages().get("edit.not-found", Map.of("id", typed)));
+            configuration.messages().send(context.getSource().getSender(), "edit.not-found", Map.of("id", typed));
         }
         return id;
     }

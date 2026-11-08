@@ -54,11 +54,11 @@ public final class MannequinInteractListener implements Listener {
         Player player = event.getPlayer();
         Optional<WardrobeLayout> layout = configuration.layout();
         if (!access.canUse(player, mannequin.get(), event.getRightClicked().getLocation())) {
-            player.sendMessage(configuration.messages().get("mannequin.no-access"));
+            configuration.messages().send(player, "mannequin.no-access");
         } else if (layout.isEmpty()) {
-            player.sendMessage(configuration.messages().get("wardrobe.closed"));
+            configuration.messages().send(player, "wardrobe.closed");
         } else if (inUse(mannequin.get().id())) {
-            player.sendMessage(configuration.messages().get("mannequin.in-use"));
+            configuration.messages().send(player, "mannequin.in-use");
         } else {
             WardrobeMenu menu = WardrobeMenu.forMannequin(wardrobes.load(mannequin.get().id()), layout.get(), tags.get());
             player.openInventory(menu.getInventory());

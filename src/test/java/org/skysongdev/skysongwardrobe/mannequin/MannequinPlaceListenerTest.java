@@ -71,7 +71,7 @@ class MannequinPlaceListenerTest {
 
         assertTrue(event.isCancelled());
         assertEquals("[Wardrobe] You can't place mannequins.",
-                PlainTextComponentSerializer.plainText().serialize(player.nextComponentMessage()));
+                PlainTextComponentSerializer.plainText().serialize(player.nextActionBar()));
     }
 
     @Test
@@ -81,7 +81,7 @@ class MannequinPlaceListenerTest {
         listener.onInteract(event);
 
         assertFalse(event.isCancelled());
-        assertNull(player.nextComponentMessage());
+        assertNull(player.nextActionBar());
     }
 
     @Test
@@ -100,7 +100,7 @@ class MannequinPlaceListenerTest {
 
         listener.onInteract(event);
 
-        assertNull(player.nextComponentMessage());
+        assertNull(player.nextActionBar());
         assertTrue(placed.isEmpty());
     }
 }

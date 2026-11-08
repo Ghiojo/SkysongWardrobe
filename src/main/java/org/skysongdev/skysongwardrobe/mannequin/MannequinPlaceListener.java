@@ -38,7 +38,7 @@ public final class MannequinPlaceListener implements Listener {
         }
         event.setCancelled(true);
         if (result != MannequinPlacer.Result.PLACED) {
-            event.getPlayer().sendMessage(messages.get().get("mannequin." + key(result)));
+            messages.get().send(event.getPlayer(), "mannequin." + key(result));
         }
     }
 

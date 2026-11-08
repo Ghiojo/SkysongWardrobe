@@ -67,7 +67,7 @@ public final class WardrobeMenuListener implements Listener {
                 saved(menu, player);
             } else {
                 menu.undoTakeOut(event.getSlot(), item);
-                player.sendMessage(configuration.messages().get("wardrobe.inventory-full"));
+                configuration.messages().send(player, "wardrobe.inventory-full");
             }
         });
     }
@@ -115,7 +115,7 @@ public final class WardrobeMenuListener implements Listener {
             (menu.isMannequin() ? mannequinWardrobes : wardrobes).save(menu.wardrobe());
         } catch (IOException failed) {
             logger.log(Level.WARNING, "Could not save the wardrobe of " + menu.wardrobe().owner() + ".", failed);
-            player.sendMessage(configuration.messages().get("wardrobe.save-error"));
+            configuration.messages().send(player, "wardrobe.save-error");
         }
         redrawOtherMenus(menu);
     }
@@ -130,6 +130,6 @@ public final class WardrobeMenuListener implements Listener {
     }
 
     private void refuse(Player player, WardrobeMenu.Refusal why) {
-        player.sendMessage(configuration.messages().get("wardrobe.refused." + why.name().toLowerCase(Locale.ROOT).replace('_', '-')));
+        configuration.messages().send(player, "wardrobe.refused." + why.name().toLowerCase(Locale.ROOT).replace('_', '-'));
     }
 }
