@@ -209,7 +209,7 @@ public class SkysongWardrobe extends JavaPlugin {
 
     /** Reads every placed mannequin and their wardrobes, and clears out mannequins broken earlier. */
     private void loadMannequins() {
-        mannequins = MannequinRepository.load(getDataFolder().toPath().resolve("mannequins"), getLogger());
+        mannequins = MannequinRepository.load(storage.mannequins(), getLogger());
         mannequinWardrobes = new WardrobeRepository(storage.wardrobes(WardrobeKind.MANNEQUIN), storageWriter, getLogger());
         mannequinMarker = new MannequinMarker(this);
         getServer().getPluginManager().registerEvents(

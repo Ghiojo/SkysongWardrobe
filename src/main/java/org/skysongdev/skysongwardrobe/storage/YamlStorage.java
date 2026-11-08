@@ -1,5 +1,7 @@
 package org.skysongdev.skysongwardrobe.storage;
 
+import org.skysongdev.skysongwardrobe.mannequin.MannequinStore;
+import org.skysongdev.skysongwardrobe.mannequin.YamlMannequinStore;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.render.YamlTextureCache;
 
@@ -44,6 +46,15 @@ public final class YamlStorage implements StorageBackend {
     @Override
     public WardrobeStore wardrobes(WardrobeKind kind) {
         return new YamlWardrobeStore(wardrobeFolder(dataFolder, kind), logger);
+    }
+
+    @Override
+    public MannequinStore mannequins() {
+        return new YamlMannequinStore(mannequinFolder(dataFolder), logger);
+    }
+
+    public static Path mannequinFolder(Path dataFolder) {
+        return dataFolder.resolve("mannequins");
     }
 
     /** The data already is in the files. */
