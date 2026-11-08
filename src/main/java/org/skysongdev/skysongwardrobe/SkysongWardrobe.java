@@ -9,6 +9,7 @@ import org.skysongdev.skysongwardrobe.commands.DeleteCommand;
 import org.skysongdev.skysongwardrobe.commands.EditCommand;
 import org.skysongdev.skysongwardrobe.commands.GalleryCommand;
 import org.skysongdev.skysongwardrobe.commands.ReloadCommand;
+import org.skysongdev.skysongwardrobe.commands.SubCommand;
 import org.skysongdev.skysongwardrobe.commands.UnapplyCommand;
 import org.skysongdev.skysongwardrobe.commands.UploadCommand;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommand;
@@ -72,6 +73,7 @@ import org.skysongdev.skysongwardrobe.wardrobe.WardrobeSessionListener;
 import java.io.IOException;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -149,7 +151,7 @@ public class SkysongWardrobe extends JavaPlugin {
         SkinUploader uploader = new SkinUploader(galleries, archive, () -> downloader(configuration.settings(), getLogger()),
                 new DialogConfirmationPrompt(), configuration, new BukkitTaskRunner(this), Clock.systemUTC(), getLogger());
 
-        WardrobeCommands commands = new WardrobeCommands(List.of(
+        List<SubCommand> subCommands = new ArrayList<>(List.of(
                 new ReloadCommand(configuration),
                 new UploadCommand(uploader, configuration),
                 new EditCommand(galleries, uploader, configuration, getLogger()),
@@ -168,6 +170,8 @@ public class SkysongWardrobe extends JavaPlugin {
         OutfitRenderer outfits = startRendering(itemTags);
         startMannequins(itemTags, outfits);
         hookCitizens(outfits);
+        npcWardrobes().ifPresent(npcs -> subCommands.add(npcs.command(CitizensHook.directory(), itemTags)));
+        WardrobeCommands commands = new WardrobeCommands(subCommands);
         hookSkysongStats();
 
         getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, event -> {

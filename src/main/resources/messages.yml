@@ -106,6 +106,10 @@ mannequin:
   break-hint: "<gray>Sneak and punch to pick this mannequin up."
 
 npc:
+  not-found: "<prefix> <red>Select an NPC with /npc sel, look at one, or give its number."
+  not-a-player: "<prefix> <red>Only player NPCs can wear a wardrobe."
+  no-access: "<prefix> <red>This NPC isn't yours."
+  in-use: "<prefix> <red>Someone else is dressing this NPC right now."
   # Shown to whoever closed the NPC's wardrobe.
   no-skin: "<prefix> <red>This NPC has no skin of its own yet. Give it one with /npc skin, then try again."
   queued: "<prefix> <gray>The NPC's new look is being prepared and will appear shortly."
