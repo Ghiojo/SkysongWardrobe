@@ -14,11 +14,12 @@ import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
 
 import java.util.Arrays;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
- * One open wardrobe menu: filler everywhere but the slots, which show the stored items. A
- * mannequin's menu also has the locked {@link MannequinEquipment} slots, which take armour and
- * held items instead of wardrobe items.
+ * One open wardrobe menu: filler everywhere but the slots, which show the stored items. A kind
+ * with equipment, such as a mannequin, also has the locked {@link MannequinEquipment} slots,
+ * which take armour and held items instead of wardrobe items.
  * Every move goes through here, so the slot rules hold whether a player clicks, shift-clicks
  * or uses the cursor; {@link WardrobeMenuListener} turns inventory events into these calls.
  */
@@ -40,27 +41,30 @@ public final class WardrobeMenu implements InventoryHolder {
     private final Wardrobe wardrobe;
     private final WardrobeLayout layout;
     private final ItemTagGateway tags;
+    private final WardrobeKind kind;
     private final boolean equipment;
     private final Inventory inventory;
     private boolean changed;
 
     /** A player's wardrobe menu. */
     public WardrobeMenu(Wardrobe wardrobe, WardrobeLayout layout, ItemTagGateway tags) {
-        this(wardrobe, layout, tags, false);
+        this(WardrobeKind.PLAYER, wardrobe, layout, tags);
     }
 
-    private WardrobeMenu(Wardrobe wardrobe, WardrobeLayout layout, ItemTagGateway tags, boolean equipment) {
+    /** A menu on a wardrobe of the given kind. */
+    public WardrobeMenu(WardrobeKind kind, Wardrobe wardrobe, WardrobeLayout layout, ItemTagGateway tags) {
+        this.kind = kind;
         this.wardrobe = wardrobe;
         this.layout = layout;
         this.tags = tags;
-        this.equipment = equipment;
+        this.equipment = kind.hasEquipment();
         this.inventory = Bukkit.createInventory(this, WardrobeLayout.SIZE, MiniMessage.miniMessage().deserialize(layout.title()));
         draw();
     }
 
     /** A mannequin's wardrobe menu, with its equipment slots. */
     public static WardrobeMenu forMannequin(Wardrobe wardrobe, WardrobeLayout layout, ItemTagGateway tags) {
-        return new WardrobeMenu(wardrobe, layout, tags, true);
+        return new WardrobeMenu(WardrobeKind.MANNEQUIN, wardrobe, layout, tags);
     }
 
     /** The wardrobe menu a player is looking at, if any. */
@@ -73,9 +77,14 @@ public final class WardrobeMenu implements InventoryHolder {
         return wardrobe;
     }
 
-    /** Whether this is a mannequin's menu, whose wardrobe is keyed by the mannequin's id. */
-    public boolean isMannequin() {
-        return equipment;
+    /** Whose wardrobe this menu shows. */
+    public WardrobeKind kind() {
+        return kind;
+    }
+
+    /** Whether this menu shows the wardrobe of {@code wearer}, a wearer of the given kind. */
+    public boolean shows(WardrobeKind kind, UUID wearer) {
+        return this.kind == kind && wardrobe.owner().equals(wearer);
     }
 
     /** Whether any item went in or out since the menu opened. */

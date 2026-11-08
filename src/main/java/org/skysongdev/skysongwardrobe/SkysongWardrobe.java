@@ -60,6 +60,7 @@ import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
 import org.skysongdev.skysongwardrobe.stats.SkysongStatsHook;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenuListener;
 import org.skysongdev.skysongwardrobe.worldguard.RegionAccess;
 import org.skysongdev.skysongwardrobe.worldguard.WorldGuardRegionRules;
@@ -152,8 +153,8 @@ public class SkysongWardrobe extends JavaPlugin {
         wardrobes = new WardrobeRepository(getDataFolder().toPath().resolve("wardrobes"), getLogger());
         loadMannequins();
         WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes, itemTags, configuration, getServer());
-        getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobes, mannequinWardrobes, configuration,
-                getServer(), getLogger()), this);
+        getServer().getPluginManager().registerEvents(new WardrobeMenuListener(
+                WardrobeKinds.of(wardrobes, mannequinWardrobes, getServer()), configuration, getServer(), getLogger()), this);
         getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer()), this);
         OutfitRenderer outfits = startRendering(itemTags);
         startMannequins(itemTags, outfits);

@@ -6,6 +6,7 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.skysongdev.skysongwardrobe.render.RenderQueue;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenu;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
@@ -65,7 +66,7 @@ public final class MannequinBreaker {
     private void closeMenus(Mannequin mannequin) {
         for (Player online : server.getOnlinePlayers()) {
             WardrobeMenu.of(online.getOpenInventory())
-                    .filter(menu -> menu.isMannequin() && menu.wardrobe().owner().equals(mannequin.id()))
+                    .filter(menu -> menu.shows(WardrobeKind.MANNEQUIN, mannequin.id()))
                     .ifPresent(menu -> online.closeInventory());
         }
     }
