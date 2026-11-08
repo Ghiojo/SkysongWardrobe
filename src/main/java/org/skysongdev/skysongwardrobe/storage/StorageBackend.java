@@ -2,6 +2,7 @@ package org.skysongdev.skysongwardrobe.storage;
 
 import org.skysongdev.skysongwardrobe.mannequin.MannequinStore;
 import org.skysongdev.skysongwardrobe.npc.NpcRecordStore;
+import org.skysongdev.skysongwardrobe.npc.RemovedNpcStore;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
 import org.skysongdev.skysongwardrobe.storage.importing.DatasetImporter;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
@@ -28,6 +29,9 @@ public interface StorageBackend extends AutoCloseable {
 
     /** The base skins of dressed Citizens NPCs. */
     NpcRecordStore npcRecords();
+
+    /** Who each removed NPC in the archive was; their items are the {@code REMOVED_NPC} wardrobes. */
+    RemovedNpcStore removedNpcs();
 
     /**
      * What {@code /sw storage import} copies from the YAML files in {@code dataFolder} into this

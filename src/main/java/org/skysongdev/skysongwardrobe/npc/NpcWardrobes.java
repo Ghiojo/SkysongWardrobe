@@ -57,16 +57,17 @@ public final class NpcWardrobes {
 
     /** Starts NPC wardrobes on {@code skins}, keeping their files under {@code folder}. */
     public static NpcWardrobes start(Plugin plugin, Path folder, NpcSkins skins, Shared shared) {
-        return start(plugin, folder, skins, shared, new WardrobeRepository(folder.resolve("wardrobes"), plugin.getLogger()),
-                new NpcRepository(folder, plugin.getLogger()));
+        return start(plugin, skins, shared, new WardrobeRepository(folder.resolve("wardrobes"), plugin.getLogger()),
+                new NpcRepository(folder, plugin.getLogger()),
+                new NpcArchive(folder.resolve("removed"), plugin.getLogger()));
     }
 
     /**
      * Starts NPC wardrobes on {@code skins}, their wardrobes in {@code wardrobes}, their base skins
-     * in {@code records} and the removed-NPC archive under {@code folder}.
+     * in {@code records} and removed NPCs' wardrobes in {@code archive}.
      */
-    public static NpcWardrobes start(Plugin plugin, Path folder, NpcSkins skins, Shared shared,
-                                     WardrobeRepository wardrobes, NpcRepository records) {
+    public static NpcWardrobes start(Plugin plugin, NpcSkins skins, Shared shared, WardrobeRepository wardrobes,
+                                     NpcRepository records, NpcArchive archive) {
         BaseSkins images = new BaseSkins(shared.cache(), shared.fetcher(),
                 () -> shared.configuration().settings().verbose(), plugin.getLogger());
         NpcSkinApplier applier = new NpcSkinApplier(skins, shared.tasks());
@@ -78,7 +79,6 @@ public final class NpcWardrobes {
                 (npc, editor) -> plugin.getServer().getPluginManager().callEvent(new NpcUpdateEvent(npc, editor)));
         plugin.getServer().getPluginManager().registerEvents(new NpcRenderTrigger(renderer), plugin);
         NpcAccess access = NpcAccess.standard(() -> shared.configuration().settings().npcPermissions());
-        NpcArchive archive = new NpcArchive(folder.resolve("removed"), plugin.getLogger());
         shared.kinds().register(WardrobeKind.REMOVED_NPC, archive.wardrobes(), (entry, editor) -> discardIfEmpty(archive,
                 entry, plugin));
         NpcLifecycle lifecycle = new NpcLifecycle(records, wardrobes, archive, shared.queue(), plugin.getServer(),
