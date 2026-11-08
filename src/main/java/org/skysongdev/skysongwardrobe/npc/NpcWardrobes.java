@@ -16,9 +16,12 @@ import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
+import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 
 /**
  * Wires NPC wardrobes into the shared pieces: NPC wardrobes live in {@code npcs/wardrobes/},
@@ -33,9 +36,10 @@ public final class NpcWardrobes {
     private final PluginConfiguration configuration;
     private final Server server;
     private final NpcLifecycle lifecycle;
+    private final NpcArchive archive;
 
     private NpcWardrobes(NpcRepository records, WardrobeRepository wardrobes, NpcAccess access, NpcSkins skins,
-                         PluginConfiguration configuration, Server server, NpcLifecycle lifecycle) {
+                         PluginConfiguration configuration, Server server, NpcLifecycle lifecycle, NpcArchive archive) {
         this.records = records;
         this.wardrobes = wardrobes;
         this.access = access;
@@ -43,6 +47,7 @@ public final class NpcWardrobes {
         this.configuration = configuration;
         this.server = server;
         this.lifecycle = lifecycle;
+        this.archive = archive;
     }
 
     /** Everything the shared pieces need to dress and render NPCs. */
@@ -65,15 +70,26 @@ public final class NpcWardrobes {
                 (npc, editor) -> plugin.getServer().getPluginManager().callEvent(new NpcUpdateEvent(npc, editor)));
         plugin.getServer().getPluginManager().registerEvents(new NpcRenderTrigger(renderer), plugin);
         NpcAccess access = NpcAccess.standard(() -> shared.configuration().settings().npcPermissions());
-        NpcLifecycle lifecycle = new NpcLifecycle(records, wardrobes,
-                new NpcArchive(folder.resolve("removed"), plugin.getLogger()), shared.queue(), plugin.getServer(),
+        NpcArchive archive = new NpcArchive(folder.resolve("removed"), plugin.getLogger());
+        shared.kinds().register(WardrobeKind.REMOVED_NPC, archive.wardrobes(), (entry, editor) -> discardIfEmpty(archive,
+                entry, plugin));
+        NpcLifecycle lifecycle = new NpcLifecycle(records, wardrobes, archive, shared.queue(), plugin.getServer(),
                 Clock.systemUTC(), plugin.getLogger());
-        return new NpcWardrobes(records, wardrobes, access, skins, shared.configuration(), plugin.getServer(), lifecycle);
+        return new NpcWardrobes(records, wardrobes, access, skins, shared.configuration(), plugin.getServer(), lifecycle,
+                archive);
+    }
+
+    private static void discardIfEmpty(NpcArchive archive, UUID entry, Plugin plugin) {
+        try {
+            archive.discardIfEmpty(entry);
+        } catch (IOException failed) {
+            plugin.getLogger().log(Level.WARNING, "Could not delete the emptied removed-NPC entry " + entry + ".", failed);
+        }
     }
 
     /** {@code /sw npc}, finding NPCs through {@code directory}. */
     public NpcCommand command(NpcDirectory directory, Supplier<ItemTagGateway> tags) {
-        return new NpcCommand(directory, skins, access, wardrobes, tags, configuration, server);
+        return new NpcCommand(directory, skins, access, wardrobes, tags, configuration, server, archive);
     }
 
     /** Archives the wardrobes of removed NPCs and copies those of copied ones. */

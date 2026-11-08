@@ -24,6 +24,7 @@ import java.util.function.Supplier;
  * {@code /sw npc [number]}: opens a Citizens player NPC's wardrobe. Without a number it opens the
  * NPC the player selected, or else the one they are looking at, so owners who can't use
  * {@code /npc sel} only need to look at theirs. {@link NpcAccess} decides who may open which.
+ * {@code /sw npc removed} lists removed NPCs' archived wardrobes, for staff only.
  */
 public final class NpcCommand implements SubCommand {
     private static final String NUMBER = "number";
@@ -35,9 +36,11 @@ public final class NpcCommand implements SubCommand {
     private final Supplier<ItemTagGateway> tags;
     private final PluginConfiguration configuration;
     private final Server server;
+    private final NpcArchive archive;
 
     public NpcCommand(NpcDirectory directory, NpcSkins skins, NpcAccess access, WardrobeRepository wardrobes,
-                      Supplier<ItemTagGateway> tags, PluginConfiguration configuration, Server server) {
+                      Supplier<ItemTagGateway> tags, PluginConfiguration configuration, Server server,
+                      NpcArchive archive) {
         this.directory = directory;
         this.skins = skins;
         this.access = access;
@@ -45,6 +48,7 @@ public final class NpcCommand implements SubCommand {
         this.tags = tags;
         this.configuration = configuration;
         this.server = server;
+        this.archive = archive;
     }
 
     @Override
@@ -55,6 +59,10 @@ public final class NpcCommand implements SubCommand {
                     Player viewer = (Player) context.getSource().getSender();
                     return open(viewer, directory.selected(viewer).or(() -> directory.lookedAt(viewer)));
                 })
+                .then(LiteralArgumentBuilder.<CommandSourceStack>literal("removed")
+                        .requires(source -> Permissions.hasAnyOther(source.getSender(),
+                                configuration.settings().npcPermissions()))
+                        .executes(context -> openRemoved((Player) context.getSource().getSender())))
                 .then(RequiredArgumentBuilder.<CommandSourceStack, Integer>argument(NUMBER, IntegerArgumentType.integer(0))
                         .executes(context -> open((Player) context.getSource().getSender(),
                                 directory.byNumber(IntegerArgumentType.getInteger(context, NUMBER)))));
@@ -79,6 +87,22 @@ public final class NpcCommand implements SubCommand {
         }
         viewer.openInventory(new WardrobeMenu(WardrobeKind.NPC, wardrobes.load(target.get().id()), layout.get(),
                 tags.get()).getInventory());
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private int openRemoved(Player viewer) {
+        Optional<WardrobeLayout> layout = configuration.layout();
+        if (layout.isEmpty()) {
+            configuration.messages().send(viewer, "wardrobe.closed");
+            return 0;
+        }
+        RemovedNpcsMenu menu = new RemovedNpcsMenu(archive, configuration.galleryMenu(), layout.get(), tags.get(),
+                configuration.messages());
+        if (menu.isEmpty()) {
+            configuration.messages().send(viewer, "npc.removed.none");
+            return 0;
+        }
+        viewer.openInventory(menu.getInventory());
         return Command.SINGLE_SUCCESS;
     }
 

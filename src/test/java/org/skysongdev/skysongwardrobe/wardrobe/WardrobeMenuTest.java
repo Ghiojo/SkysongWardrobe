@@ -169,4 +169,17 @@ class WardrobeMenuTest {
         assertFalse(mannequin.shows(WardrobeKind.MANNEQUIN, java.util.UUID.randomUUID()));
         assertEquals(WardrobeKind.PLAYER, menu.kind());
     }
+
+    @Test
+    void aRemovedNpcsWardrobeOnlyLetsItemsOut() {
+        wardrobe.put("coat", new ItemStack(Material.LEATHER_CHESTPLATE));
+        WardrobeMenu removed = new WardrobeMenu(WardrobeKind.REMOVED_NPC, wardrobe, layout(), tags());
+
+        assertEquals(Optional.of(WardrobeMenu.Refusal.TAKE_OUT_ONLY),
+                removed.placeInto(BOOTS, new ItemStack(Material.LEATHER_BOOTS)).refusal());
+        assertEquals(Optional.of(WardrobeMenu.Refusal.TAKE_OUT_ONLY),
+                removed.placeAnywhere(new ItemStack(Material.LEATHER_BOOTS)).refusal());
+        assertEquals(Material.LEATHER_CHESTPLATE, removed.takeOut(COAT).orElseThrow().getType());
+        assertTrue(wardrobe.items().isEmpty());
+    }
 }

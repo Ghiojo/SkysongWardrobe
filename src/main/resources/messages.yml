@@ -65,6 +65,7 @@ wardrobe:
     not-accepted: "<prefix> <red>That item doesn't go in this slot."
     slot-full: "<prefix> <red>Take the item in this slot out first."
     no-free-slot: "<prefix> <red>There is no free slot for that item."
+    take-out-only: "<prefix> <red>Items can only be taken out of this wardrobe."
   inventory-full: "<prefix> <red>Your inventory is full."
   save-error: "<prefix> <red>Could not save the wardrobe. Please tell staff."
   closed: "<prefix> <red>The wardrobe is closed until staff fix wardrobe.yml."
@@ -110,6 +111,12 @@ npc:
   not-a-player: "<prefix> <red>Only player NPCs can wear a wardrobe."
   no-access: "<prefix> <red>This NPC isn't yours."
   in-use: "<prefix> <red>Someone else is dressing this NPC right now."
+  removed:
+    # The /sw npc removed menu. Placeholders: <name>, <number>, <date>
+    title: "Removed NPCs"
+    entry-name: "<white><name> <gray>#<number>"
+    entry-lore: "<dark_gray>Removed <date>"
+    none: "<prefix> <gray>No removed NPC has items left in its wardrobe."
   # Shown to whoever closed the NPC's wardrobe.
   no-skin: "<prefix> <red>This NPC has no skin of its own yet. Give it one with /npc skin, then try again."
   queued: "<prefix> <gray>The NPC's new look is being prepared and will appear shortly."

@@ -25,7 +25,7 @@ import java.util.UUID;
  */
 public final class WardrobeMenu implements InventoryHolder {
     /** Why a move was refused, each with its own message. */
-    public enum Refusal { NO_TYPE, NOT_ACCEPTED, SLOT_FULL, NO_FREE_SLOT }
+    public enum Refusal { NO_TYPE, NOT_ACCEPTED, SLOT_FULL, NO_FREE_SLOT, TAKE_OUT_ONLY }
 
     /** The outcome of a move: what is left over, and why it was refused if it was. */
     public record Move(ItemStack rest, Optional<Refusal> refusal) {
@@ -94,6 +94,9 @@ public final class WardrobeMenu implements InventoryHolder {
 
     /** Puts one of {@code item} into the slot at {@code position}; returns the rest of the stack. */
     public Move placeInto(int position, ItemStack item) {
+        if (!kind.acceptsItems() && item != null && !item.isEmpty()) {
+            return Move.refused(item, Refusal.TAKE_OUT_ONLY);
+        }
         Optional<MannequinEquipment> worn = equipmentAt(position);
         if (worn.isPresent() && item != null && !item.isEmpty()) {
             return placeEquipment(worn.get(), item);
@@ -114,6 +117,9 @@ public final class WardrobeMenu implements InventoryHolder {
 
     /** Puts one of {@code item} into the first free slot that accepts it, for shift-clicks. */
     public Move placeAnywhere(ItemStack item) {
+        if (!kind.acceptsItems()) {
+            return Move.refused(item, Refusal.TAKE_OUT_ONLY);
+        }
         Optional<String> type = tags.type(item);
         Optional<SlotDefinition> free = type.flatMap(wanted -> layout.slots().stream()
                 .filter(slot -> slot.accepts(wanted) && wardrobe.item(slot.id()).isEmpty())

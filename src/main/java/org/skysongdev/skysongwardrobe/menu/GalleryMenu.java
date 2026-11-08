@@ -8,7 +8,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.skysongdev.skysongwardrobe.config.GalleryMenuLayout;
 import org.skysongdev.skysongwardrobe.config.MenuItem;
@@ -22,7 +21,7 @@ import java.util.Map;
  * One open gallery menu: entries as their icons in id order, 45 a page, with page arrows on
  * the bottom row. Nothing in it can be taken; {@link MenuListener} cancels every click.
  */
-public final class GalleryMenu implements InventoryHolder {
+public final class GalleryMenu implements ClickableMenu {
     static final int SIZE = 54;
     static final int PREVIOUS_SLOT = 45;
     static final int NEXT_SLOT = 53;
@@ -45,6 +44,11 @@ public final class GalleryMenu implements InventoryHolder {
 
     public void open(Player viewer) {
         viewer.openInventory(inventory);
+    }
+
+    @Override
+    public void click(int slot, Player viewer) {
+        click(slot);
     }
 
     /** Turns the page when an arrow is clicked; every other position does nothing. */

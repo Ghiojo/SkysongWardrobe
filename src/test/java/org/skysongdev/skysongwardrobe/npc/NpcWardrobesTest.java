@@ -97,4 +97,19 @@ class NpcWardrobesTest {
 
         assertFalse(npcs.access().canOpen(owner, info));
     }
+
+    @Test
+    void anEmptiedRemovedNpcEntryIsDiscardedWhenItsMenuCloses() throws java.io.IOException {
+        NpcInfo baker = new NpcInfo(UUID.randomUUID(), 7, "Baker", Optional.empty());
+        org.skysongdev.skysongwardrobe.wardrobe.Wardrobe worn = new org.skysongdev.skysongwardrobe.wardrobe.Wardrobe(baker.id());
+        worn.put("coat", new org.bukkit.inventory.ItemStack(org.bukkit.Material.LEATHER_CHESTPLATE));
+        NpcArchive archive = new NpcArchive(folder.resolve("npcs/removed"), Logger.getAnonymousLogger());
+        UUID entry = archive.store(baker, worn, java.time.Instant.now());
+        WardrobeKinds.Kind removed = kinds.get(WardrobeKind.REMOVED_NPC).orElseThrow();
+        removed.wardrobes().load(entry).put("coat", null);
+
+        removed.changed().accept(entry, server.addPlayer());
+
+        assertEquals(0, archive.list().size());
+    }
 }
