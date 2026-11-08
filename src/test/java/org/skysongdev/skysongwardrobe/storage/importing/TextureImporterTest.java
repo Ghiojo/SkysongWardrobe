@@ -1,6 +1,7 @@
 package org.skysongdev.skysongwardrobe.storage.importing;
 
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -41,6 +42,12 @@ class TextureImporterTest {
         StorageSettings sqlite = new StorageSettings(StorageType.SQLITE, "data.db",
                 new StorageSettingsParser().parse(new YamlConfiguration()).mysql());
         database = StorageStartup.open(() -> sqlite, folder, Clock.systemUTC(), Logger.getAnonymousLogger()).orElseThrow();
+    }
+
+    /** Closes the pool, so the database file is free when the temp folder is deleted (Windows locks open files). */
+    @AfterEach
+    void closeDatabase() {
+        database.close();
     }
 
     @Test
