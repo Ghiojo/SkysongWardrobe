@@ -1,70 +1,63 @@
 package org.skysongdev.skysongwardrobe.wardrobe;
 
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
+import org.skysongdev.skysongwardrobe.storage.StorageException;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.util.Base64;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
 /**
- * Saves wardrobes to {@code wardrobes/<uuid>.yml}, each item as Paper's serialized item bytes
- * in Base64. Keyed by UUID, so a name change keeps the wardrobe. An item that can't be read
- * (say, after a downgrade) is kept as it was in the file, so saving never loses it.
+ * One loaded {@link Wardrobe} per owner, kept until {@link #unload}, saved through a
+ * {@link WardrobeStore}. An item that can't be read (say, after a downgrade) is kept as its saved
+ * bytes and written back on every save, so saving never loses it.
  */
 public final class WardrobeRepository {
-    private static final String SLOTS = "slots";
-
-    private final Path folder;
+    private final WardrobeStore store;
     private final Logger logger;
     private final Map<UUID, Wardrobe> loaded = new HashMap<>();
-    private final Map<UUID, Map<String, String>> unreadable = new HashMap<>();
+    private final Map<UUID, Map<String, byte[]>> unreadable = new HashMap<>();
 
-    public WardrobeRepository(Path folder, Logger logger) {
-        this.folder = folder;
+    public WardrobeRepository(WardrobeStore store, Logger logger) {
+        this.store = store;
         this.logger = logger;
     }
 
-    /** The owner's wardrobe, read from disk the first time; empty if they have none yet. */
+    /** Wardrobes saved as YAML files in {@code folder}. */
+    public WardrobeRepository(Path folder, Logger logger) {
+        this(new YamlWardrobeStore(folder, logger), logger);
+    }
+
+    /**
+     * The owner's wardrobe, read from the store the first time; empty if they have none yet. A
+     * store that can't be read throws {@link StorageException} rather than handing out an empty
+     * wardrobe, whose next save would wipe the real one.
+     */
     public synchronized Wardrobe load(UUID owner) {
         return loaded.computeIfAbsent(owner, this::read);
     }
 
     public synchronized void save(Wardrobe wardrobe) throws IOException {
-        YamlConfiguration file = new YamlConfiguration();
-        file.set("owner", wardrobe.owner().toString());
-        unreadable.getOrDefault(wardrobe.owner(), Map.of()).forEach((slot, raw) -> file.set(SLOTS + "." + slot, raw));
-        wardrobe.items().forEach((slot, item) ->
-                file.set(SLOTS + "." + slot, Base64.getEncoder().encodeToString(item.serializeAsBytes())));
-        Files.createDirectories(folder);
-        file.save(file(wardrobe.owner()).toFile());
+        Map<String, byte[]> slots = new LinkedHashMap<>(unreadable.getOrDefault(wardrobe.owner(), Map.of()));
+        wardrobe.items().forEach((slot, item) -> slots.put(slot, item.serializeAsBytes()));
+        store.write(wardrobe.owner(), slots);
     }
 
     /**
-     * Deletes the owner's wardrobe, for a broken mannequin whose items were given back. If the
-     * file still holds items that couldn't be read, it is renamed to {@code <uuid>.broken.yml}
-     * instead, so they are never lost.
+     * Deletes the owner's wardrobe, for a broken mannequin whose items were given back. If it
+     * still holds items that couldn't be read, the store keeps it aside instead, so they are never lost.
      */
     public synchronized void delete(UUID owner) throws IOException {
-        Path path = file(owner);
-        if (unreadable.containsKey(owner) && Files.isRegularFile(path)) {
-            Files.move(path, folder.resolve(owner + ".broken.yml"), StandardCopyOption.REPLACE_EXISTING);
-            logger.warning(path + " held items that can't be read, so it was kept as " + owner + ".broken.yml.");
-        } else {
-            Files.deleteIfExists(path);
-        }
+        store.delete(owner, unreadable.containsKey(owner));
         loaded.remove(owner);
         unreadable.remove(owner);
     }
 
-    /** Forgets the cached copy, for an owner who left; the next load reads the file again. */
+    /** Forgets the cached copy, for an owner who left; the next load reads the store again. */
     public synchronized void unload(UUID owner) {
         loaded.remove(owner);
         unreadable.remove(owner);
@@ -72,27 +65,21 @@ public final class WardrobeRepository {
 
     private Wardrobe read(UUID owner) {
         Wardrobe wardrobe = new Wardrobe(owner);
-        Path path = file(owner);
-        if (!Files.isRegularFile(path)) {
-            return wardrobe;
+        Map<String, byte[]> slots;
+        try {
+            slots = store.read(owner);
+        } catch (IOException failed) {
+            throw new StorageException("Could not read the wardrobe of " + owner, failed);
         }
-        ConfigurationSection slots = YamlConfiguration.loadConfiguration(path.toFile()).getConfigurationSection(SLOTS);
-        if (slots == null) {
-            return wardrobe;
-        }
-        for (String slot : slots.getKeys(false)) {
-            String raw = slots.getString(slot);
+        slots.forEach((slot, bytes) -> {
             try {
-                wardrobe.put(slot, ItemStack.deserializeBytes(Base64.getDecoder().decode(raw)));
+                wardrobe.put(slot, ItemStack.deserializeBytes(bytes));
             } catch (RuntimeException broken) {
-                logger.warning(path + ": the item in " + slot + " can't be read, so it is kept in the file untouched.");
-                unreadable.computeIfAbsent(owner, key -> new HashMap<>()).put(slot, raw);
+                logger.warning("The item in slot " + slot + " of the wardrobe of " + owner
+                        + " can't be read, so it is kept as saved.");
+                unreadable.computeIfAbsent(owner, key -> new HashMap<>()).put(slot, bytes);
             }
-        }
+        });
         return wardrobe;
-    }
-
-    private Path file(UUID owner) {
-        return folder.resolve(owner + ".yml");
     }
 }
