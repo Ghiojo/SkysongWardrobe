@@ -174,7 +174,10 @@ Run `/sw reload` after editing any of these files.
   (0 to 53), the `wardrobe_type` values it `accepts`, and a `priority`; higher priorities
   are drawn over lower ones. If the file has an error, the wardrobe stays closed and the
   error is logged until it is fixed.
-- `messages.yml`: every message, in MiniMessage format.
+- `messages.yml`: every message, in MiniMessage format. The `hotbar` list names the
+  sections or keys shown above the hotbar instead of in chat (by default the wardrobe,
+  render, mannequin, apply and unapply messages). A messages.yml without the list uses
+  the default one.
 
 ## Data files
 

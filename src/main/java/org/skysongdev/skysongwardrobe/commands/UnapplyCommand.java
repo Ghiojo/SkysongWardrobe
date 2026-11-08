@@ -44,21 +44,21 @@ public final class UnapplyCommand implements SubCommand {
         Player player = (Player) context.getSource().getSender();
         Optional<LayerKind> layer = LayerArgument.parse(StringArgumentType.getString(context, LAYER));
         if (layer.isEmpty()) {
-            player.sendMessage(configuration.messages().get("apply.unknown-layer"));
+            configuration.messages().send(player, "apply.unknown-layer");
             return 0;
         }
         ItemStack held = player.getInventory().getItemInMainHand();
         ItemTagGateway gateway = tags.get();
         if (!gateway.isSkysongItem(held)) {
-            player.sendMessage(configuration.messages().get("apply.not-a-skysong-item"));
+            configuration.messages().send(player, "apply.not-a-skysong-item");
             return 0;
         }
         if (!gateway.removeLayer(player, held, layer.get())) {
-            player.sendMessage(configuration.messages().get("unapply.nothing"));
+            configuration.messages().send(player, "unapply.nothing");
             return 0;
         }
         player.getInventory().setItemInMainHand(held);
-        player.sendMessage(configuration.messages().get("unapply.done"));
+        configuration.messages().send(player, "unapply.done");
         return Command.SINGLE_SUCCESS;
     }
 }

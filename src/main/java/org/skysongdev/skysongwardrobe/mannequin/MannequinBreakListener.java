@@ -35,7 +35,7 @@ public final class MannequinBreakListener implements Listener {
             return;
         }
         if (breaker.breakBy(event.getPlayer(), event.getAttacked()) == MannequinBreaker.Result.NO_ACCESS) {
-            event.getPlayer().sendMessage(messages.get().get("mannequin.no-access"));
+            messages.get().send(event.getPlayer(), "mannequin.no-access");
         }
     }
 

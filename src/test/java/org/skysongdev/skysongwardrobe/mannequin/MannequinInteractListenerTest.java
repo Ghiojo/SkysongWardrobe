@@ -74,7 +74,7 @@ class MannequinInteractListenerTest {
     }
 
     private static String message(PlayerMock player) {
-        return PlainTextComponentSerializer.plainText().serialize(player.nextComponentMessage());
+        return PlainTextComponentSerializer.plainText().serialize(player.nextActionBar());
     }
 
     @Test

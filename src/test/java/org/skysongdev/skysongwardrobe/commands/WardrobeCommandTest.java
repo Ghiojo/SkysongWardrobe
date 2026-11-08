@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.skysongdev.skysongwardrobe.commands.GalleryCommandFixture.nextMessage;
+import static org.skysongdev.skysongwardrobe.commands.GalleryCommandFixture.nextActionBar;
 
 class WardrobeCommandTest {
     private ServerMock server;
@@ -82,7 +82,7 @@ class WardrobeCommandTest {
 
         run(alice, "wardrobe Nobody");
 
-        assertEquals("[Wardrobe] No player called Nobody has played here.", nextMessage(alice));
+        assertEquals("[Wardrobe] No player called Nobody has played here.", nextActionBar(alice));
     }
 
     @Test
@@ -92,7 +92,7 @@ class WardrobeCommandTest {
 
         run(alice, "wardrobe");
 
-        assertEquals("[Wardrobe] The wardrobe is closed until staff fix wardrobe.yml.", nextMessage(alice));
+        assertEquals("[Wardrobe] The wardrobe is closed until staff fix wardrobe.yml.", nextActionBar(alice));
     }
 
     private void run(PlayerMock sender, String command) throws CommandSyntaxException {

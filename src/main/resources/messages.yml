@@ -3,6 +3,16 @@
 
 prefix: "<dark_gray>[<gold>Wardrobe</gold>]</dark_gray>"
 
+# Messages shown above the hotbar instead of in chat, so changing clothes doesn't fill the chat.
+# Each entry is a whole section (wardrobe covers every wardrobe.* message) or a single key
+# (upload.saved). Everything else goes to chat, and the console always gets chat.
+hotbar:
+  - wardrobe
+  - render
+  - mannequin
+  - apply
+  - unapply
+
 # The Agree/Decline screen /sw upload shows before downloading.
 # Placeholders: <id>, <name>, <link>
 upload:

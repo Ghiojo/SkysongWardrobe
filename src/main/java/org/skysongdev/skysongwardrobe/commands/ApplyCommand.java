@@ -76,19 +76,19 @@ public final class ApplyCommand implements SubCommand {
         String typed = words[0];
         Optional<LayerKind> layer = words.length == 2 ? LayerArgument.parse(words[1]) : Optional.empty();
         if (layer.isEmpty()) {
-            player.sendMessage(configuration.messages().get("apply.unknown-layer"));
+            configuration.messages().send(player, "apply.unknown-layer");
             return 0;
         }
         int separator = typed.indexOf(OWNER_SEPARATOR);
         String ownerName = separator < 0 ? player.getName() : typed.substring(0, separator);
         Optional<OfflinePlayer> owner = separator < 0 ? Optional.of(player) : find(ownerName);
         if (owner.isEmpty()) {
-            player.sendMessage(configuration.messages().get("apply.unknown-player", Map.of("player", ownerName)));
+            configuration.messages().send(player, "apply.unknown-player", Map.of("player", ownerName));
             return 0;
         }
         if (!owner.get().getUniqueId().equals(player.getUniqueId())
                 && !Permissions.hasAnyOther(player, configuration.settings().applyPermissions())) {
-            player.sendMessage(configuration.messages().get("apply.no-permission-other"));
+            configuration.messages().send(player, "apply.no-permission-other");
             return 0;
         }
         String idText = typed.substring(separator + 1);
@@ -97,18 +97,18 @@ public final class ApplyCommand implements SubCommand {
                 .flatMap(gallery -> gallery.entry(id.get())).isPresent();
         Map<String, String> placeholders = Map.of("player", ownerName, "id", idText.toLowerCase(Locale.ROOT));
         if (!exists) {
-            player.sendMessage(configuration.messages().get("apply.not-found", placeholders));
+            configuration.messages().send(player, "apply.not-found", placeholders);
             return 0;
         }
         ItemStack held = player.getInventory().getItemInMainHand();
         ItemTagGateway gateway = tags.get();
         if (!gateway.isSkysongItem(held)) {
-            player.sendMessage(configuration.messages().get("apply.not-a-skysong-item"));
+            configuration.messages().send(player, "apply.not-a-skysong-item");
             return 0;
         }
         gateway.setLayer(player, held, layer.get(), new SkinReference(owner.get().getUniqueId(), id.get()).stored());
         player.getInventory().setItemInMainHand(held);
-        player.sendMessage(configuration.messages().get("apply.done", placeholders));
+        configuration.messages().send(player, "apply.done", placeholders);
         return Command.SINGLE_SUCCESS;
     }
 

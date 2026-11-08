@@ -59,7 +59,7 @@ public final class SkinUploader {
     public void relink(Player player, SkinId id, URI link) {
         Optional<SkinEntry> entry = entry(player, id);
         if (entry.isEmpty()) {
-            player.sendMessage(configuration.messages().get("edit.not-found", Map.of("id", id.value())));
+            configuration.messages().send(player, "edit.not-found", Map.of("id", id.value()));
             return;
         }
         UploadRequest request = new UploadRequest(id, link, entry.get().icon(), entry.get().name());
@@ -115,7 +115,7 @@ public final class SkinUploader {
     }
 
     private void send(Player player, String key, UploadRequest request) {
-        player.sendMessage(configuration.messages().get(key, placeholders(request)));
+        configuration.messages().send(player, key, placeholders(request));
     }
 
     private static Map<String, String> placeholders(UploadRequest request) {

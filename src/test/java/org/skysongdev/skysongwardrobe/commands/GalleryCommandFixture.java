@@ -29,4 +29,9 @@ final class GalleryCommandFixture {
     static String nextMessage(PlayerMock player) {
         return PlainTextComponentSerializer.plainText().serialize(player.nextComponentMessage());
     }
+
+    /** The next text shown above the player's hotbar, as plain text. */
+    static String nextActionBar(PlayerMock player) {
+        return PlainTextComponentSerializer.plainText().serialize(player.nextActionBar());
+    }
 }

@@ -128,7 +128,7 @@ class MannequinBreakerTest {
 
         assertTrue(entity.isValid());
         assertEquals("[Wardrobe] This mannequin isn't yours.",
-                PlainTextComponentSerializer.plainText().serialize(stranger.nextComponentMessage()));
+                PlainTextComponentSerializer.plainText().serialize(stranger.nextActionBar()));
     }
 
     @Test
