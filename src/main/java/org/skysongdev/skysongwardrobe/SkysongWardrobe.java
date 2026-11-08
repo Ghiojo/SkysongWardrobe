@@ -60,7 +60,8 @@ import org.skysongdev.skysongwardrobe.render.RenderTrigger;
 import org.skysongdev.skysongwardrobe.render.SkinApplier;
 import org.skysongdev.skysongwardrobe.render.SkinRenderer;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
-import org.skysongdev.skysongwardrobe.render.YamlTextureCache;
+import org.skysongdev.skysongwardrobe.storage.StorageBackend;
+import org.skysongdev.skysongwardrobe.storage.StorageStartup;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
 import org.skysongdev.skysongwardrobe.stats.SkysongStatsHook;
@@ -111,6 +112,7 @@ public class SkysongWardrobe extends JavaPlugin {
     private WardrobeKinds wardrobeKinds;
     private RenderRouter renderRouter;
     private TextureCache textureCache;
+    private StorageBackend storage;
     private NpcWardrobes npcWardrobes;
 
     /** WorldGuard is optional; its flags must be registered before it enables, so here. */
@@ -132,6 +134,13 @@ public class SkysongWardrobe extends JavaPlugin {
     public void onEnable() {
         configuration = new PluginConfiguration(this);
         configuration.reload();
+        Optional<StorageBackend> opened = StorageStartup.open(configuration::storageSettings, getDataFolder().toPath(),
+                Clock.systemUTC(), getLogger());
+        if (opened.isEmpty()) {
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
+        storage = opened.get();
         if (!configuration.settings().hasMineSkinApiKey()) {
             getLogger().warning("No MineSkin API key in config.yml, so skins will not render.");
         }
@@ -255,7 +264,7 @@ public class SkysongWardrobe extends JavaPlugin {
      */
     private OutfitRenderer startRendering(Supplier<ItemTagGateway> itemTags) {
         BukkitTaskRunner tasks = new BukkitTaskRunner(this);
-        TextureCache cache = YamlTextureCache.load(getDataFolder().toPath().resolve("texture-cache.yml"));
+        TextureCache cache = storage.textures();
         textureCache = cache;
         BaseSkins bases = new BaseSkins(cache, new HttpImageFetcher(BASE_SKIN_TIMEOUT),
                 () -> configuration.settings().verbose(), getLogger());
@@ -290,6 +299,10 @@ public class SkysongWardrobe extends JavaPlugin {
     @Override
     public void onDisable() {
         // Waiting render jobs are already in render-queue.yml and resume on the next start.
+        if (storage != null) {
+            storage.close();
+            storage = null;
+        }
     }
 
     /** The loaded config.yml and messages.yml. */
