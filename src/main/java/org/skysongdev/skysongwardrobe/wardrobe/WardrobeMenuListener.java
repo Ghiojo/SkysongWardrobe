@@ -11,8 +11,8 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 
-import java.io.IOException;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -101,16 +101,23 @@ public final class WardrobeMenuListener implements Listener {
         }
     }
 
+    /** Queues the save; a failure is logged and the player told, whenever it happens. */
     private void saved(WardrobeMenu menu, Player player) {
-        try {
-            WardrobeKinds.Kind kind = kinds.get(menu.kind())
-                    .orElseThrow(() -> new IOException("Nothing stores " + menu.kind() + " wardrobes."));
-            kind.wardrobes().save(menu.wardrobe());
-        } catch (IOException failed) {
-            logger.log(Level.WARNING, "Could not save the wardrobe of " + menu.wardrobe().owner() + ".", failed);
-            configuration.messages().send(player, "wardrobe.save-error");
+        Optional<WardrobeKinds.Kind> kind = kinds.get(menu.kind());
+        if (kind.isEmpty()) {
+            saveFailed(menu, player, new IllegalStateException("Nothing stores " + menu.kind() + " wardrobes."));
+        } else {
+            kind.get().wardrobes().save(menu.wardrobe()).exceptionally(failed -> {
+                saveFailed(menu, player, failed);
+                return null;
+            });
         }
         redrawOtherMenus(menu);
+    }
+
+    private void saveFailed(WardrobeMenu menu, Player player, Throwable failed) {
+        logger.log(Level.WARNING, "Could not save the wardrobe of " + menu.wardrobe().owner() + ".", failed);
+        configuration.messages().send(player, "wardrobe.save-error");
     }
 
     /** Staff and owner may have the same wardrobe open; keep both views current. */

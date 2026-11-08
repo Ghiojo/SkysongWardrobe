@@ -12,6 +12,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -39,7 +41,7 @@ public final class NpcArchive {
         UUID entry = UUID.randomUUID();
         Wardrobe copy = wardrobes.load(entry);
         wardrobe.items().forEach(copy::put);
-        wardrobes.save(copy);
+        await(wardrobes.save(copy));
         YamlConfiguration info = new YamlConfiguration();
         info.set("npc", npc.id().toString());
         info.set("number", npc.number());
@@ -73,7 +75,7 @@ public final class NpcArchive {
     /** Deletes the entry once its wardrobe is empty, so emptied entries don't pile up. */
     public void discardIfEmpty(UUID entry) throws IOException {
         if (wardrobes.load(entry).items().isEmpty()) {
-            wardrobes.delete(entry);
+            await(wardrobes.delete(entry));
             Files.deleteIfExists(info(entry));
         }
     }
@@ -88,6 +90,15 @@ public final class NpcArchive {
         } catch (RuntimeException broken) {
             logger.warning(path + " can't be read, so it is left alone: " + broken.getMessage());
             return Optional.empty();
+        }
+    }
+
+    /** The archive writes on the caller's thread, so the future is already done; this unwraps its failure. */
+    private static void await(CompletableFuture<Void> write) throws IOException {
+        try {
+            write.join();
+        } catch (CompletionException failed) {
+            throw failed.getCause() instanceof IOException io ? io : new IOException(failed.getCause());
         }
     }
 

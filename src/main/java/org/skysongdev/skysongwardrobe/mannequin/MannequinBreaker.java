@@ -73,8 +73,12 @@ public final class MannequinBreaker {
 
     private void forget(Mannequin mannequin) {
         queue.cancel(mannequin.id());
+        wardrobes.delete(mannequin.id()).exceptionally(failed -> {
+            logger.log(Level.SEVERE, "Mannequin " + mannequin.id() + " broke and dropped its items, but its wardrobe"
+                    + " could not be deleted. Delete it by hand.", failed);
+            return null;
+        });
         try {
-            wardrobes.delete(mannequin.id());
             mannequins.delete(mannequin.id());
         } catch (IOException failed) {
             logger.log(Level.SEVERE, "Mannequin " + mannequin.id() + " broke and dropped its items, but its files"

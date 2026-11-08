@@ -61,6 +61,7 @@ import org.skysongdev.skysongwardrobe.render.RenderTrigger;
 import org.skysongdev.skysongwardrobe.render.SkinApplier;
 import org.skysongdev.skysongwardrobe.render.SkinRenderer;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
+import org.skysongdev.skysongwardrobe.storage.AsyncWriter;
 import org.skysongdev.skysongwardrobe.storage.StorageBackend;
 import org.skysongdev.skysongwardrobe.storage.StorageStartup;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
@@ -71,6 +72,7 @@ import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenuListener;
 import org.skysongdev.skysongwardrobe.worldguard.RegionAccess;
 import org.skysongdev.skysongwardrobe.worldguard.WorldGuardRegionRules;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
+import org.skysongdev.skysongwardrobe.wardrobe.YamlWardrobeStore;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeSessionListener;
 
 import java.io.IOException;
@@ -114,6 +116,7 @@ public class SkysongWardrobe extends JavaPlugin {
     private RenderRouter renderRouter;
     private TextureCache textureCache;
     private StorageBackend storage;
+    private AsyncWriter storageWriter;
     private NpcWardrobes npcWardrobes;
 
     /** WorldGuard is optional; its flags must be registered before it enables, so here. */
@@ -142,6 +145,7 @@ public class SkysongWardrobe extends JavaPlugin {
             return;
         }
         storage = opened.get();
+        storageWriter = AsyncWriter.background();
         if (!configuration.settings().hasMineSkinApiKey()) {
             getLogger().warning("No MineSkin API key in config.yml, so skins will not render.");
         }
@@ -173,13 +177,14 @@ public class SkysongWardrobe extends JavaPlugin {
                 new ApplyCommand(galleries, itemTags, configuration, getServer()),
                 new UnapplyCommand(itemTags, configuration)));
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
-        wardrobes = new WardrobeRepository(getDataFolder().toPath().resolve("wardrobes"), getLogger());
+        wardrobes = new WardrobeRepository(new YamlWardrobeStore(getDataFolder().toPath().resolve("wardrobes"),
+                getLogger()), storageWriter, getLogger());
         loadMannequins();
         WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes, itemTags, configuration, getServer());
         wardrobeKinds = WardrobeKinds.of(wardrobes, mannequinWardrobes, getServer());
         getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobeKinds, configuration, getServer(),
                 getLogger()), this);
-        getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer()), this);
+        getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer(), getLogger()), this);
         OutfitRenderer outfits = startRendering(itemTags);
         startMannequins(itemTags, outfits);
         hookCitizens(outfits);
@@ -206,8 +211,8 @@ public class SkysongWardrobe extends JavaPlugin {
     /** Reads every placed mannequin and their wardrobes, and clears out mannequins broken earlier. */
     private void loadMannequins() {
         mannequins = MannequinRepository.load(getDataFolder().toPath().resolve("mannequins"), getLogger());
-        mannequinWardrobes = new WardrobeRepository(getDataFolder().toPath().resolve("mannequins").resolve("wardrobes"),
-                getLogger());
+        mannequinWardrobes = new WardrobeRepository(new YamlWardrobeStore(
+                getDataFolder().toPath().resolve("mannequins").resolve("wardrobes"), getLogger()), storageWriter, getLogger());
         mannequinMarker = new MannequinMarker(this);
         getServer().getPluginManager().registerEvents(
                 new OrphanMannequinListener(mannequins, mannequinMarker, getLogger()), this);
@@ -302,6 +307,11 @@ public class SkysongWardrobe extends JavaPlugin {
     @Override
     public void onDisable() {
         // Waiting render jobs are already in render-queue.yml and resume on the next start.
+        if (storageWriter != null) {
+            // Finishes the queued saves before the database closes.
+            storageWriter.close();
+            storageWriter = null;
+        }
         if (storage != null) {
             storage.close();
             storage = null;
