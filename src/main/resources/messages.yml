@@ -10,6 +10,7 @@ hotbar:
   - wardrobe
   - render
   - mannequin
+  - npc
   - apply
   - unapply
 
@@ -103,3 +104,8 @@ mannequin:
   in-use: "<prefix> <red>Someone else is dressing this mannequin right now."
   # Shown above the hotbar when a mannequin is punched without sneaking.
   break-hint: "<gray>Sneak and punch to pick this mannequin up."
+
+npc:
+  # Shown to whoever closed the NPC's wardrobe.
+  no-skin: "<prefix> <red>This NPC has no skin of its own yet. Give it one with /npc skin, then try again."
+  queued: "<prefix> <gray>The NPC's new look is being prepared and will appear shortly."
