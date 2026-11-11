@@ -3,6 +3,8 @@ package org.skysongdev.skysongwardrobe;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.skysongdev.skysongitems.api.SkysongItemsApi;
+import org.skysongdev.skysongwardrobe.apiimpl.CloseActions;
+import org.skysongdev.skysongwardrobe.apiimpl.NpcHooks;
 import org.skysongdev.skysongwardrobe.apiimpl.SkysongWardrobeApiImpl;
 import org.skysongdev.skysongwardrobe.citizens.CitizensHook;
 import org.skysongdev.skysongwardrobe.commands.ApplyCommand;
@@ -124,6 +126,8 @@ public class SkysongWardrobe extends JavaPlugin {
     private AsyncWriter storageWriter;
     private NpcWardrobes npcWardrobes;
     private WardrobeOpener wardrobeOpener;
+    private MannequinOpener mannequinOpener;
+    private NpcHooks npcHooks;
     private SkysongWardrobeApiImpl api;
 
     /** WorldGuard is optional; its flags must be registered before it enables, so here. */
@@ -195,8 +199,10 @@ public class SkysongWardrobe extends JavaPlugin {
         OutfitRenderer outfits = startRendering(itemTags);
         startMannequins(itemTags, outfits);
         hookCitizens(outfits);
-        npcWardrobes().ifPresent(npcs -> subCommands.add(npcs.command(CitizensHook.directory(),
-                npcs.opener(wardrobeOpener), itemTags)));
+        npcWardrobes().ifPresent(npcs -> {
+            npcHooks = new NpcHooks(CitizensHook.directory(), npcs.opener(wardrobeOpener));
+            subCommands.add(npcs.command(npcHooks.directory(), npcHooks.opener(), itemTags));
+        });
         WardrobeCommands commands = new WardrobeCommands(subCommands);
         hookSkysongStats();
 
@@ -204,7 +210,8 @@ public class SkysongWardrobe extends JavaPlugin {
             commands.register(event.registrar());
             wardrobeCommand.register(event.registrar());
         });
-        api = new SkysongWardrobeApiImpl();
+        getServer().getPluginManager().registerEvents(new CloseActions(new BukkitTaskRunner(this)), this);
+        api = new SkysongWardrobeApiImpl(wardrobeOpener, mannequinOpener, () -> Optional.ofNullable(npcHooks), getServer());
         api.register(getServer().getServicesManager(), this);
     }
 
@@ -238,8 +245,8 @@ public class SkysongWardrobe extends JavaPlugin {
                 itemTags, configuration, mannequin -> renderer.render(mannequin.id()), getLogger());
         getServer().getPluginManager().registerEvents(new MannequinPlaceListener(placer, configuration::messages), this);
         getServer().getPluginManager().registerEvents(new MannequinRenderTrigger(renderer), this);
-        getServer().getPluginManager().registerEvents(new MannequinInteractListener(mannequinMarker,
-                new MannequinOpener(mannequins, access, wardrobeOpener)), this);
+        mannequinOpener = new MannequinOpener(mannequins, access, wardrobeOpener);
+        getServer().getPluginManager().registerEvents(new MannequinInteractListener(mannequinMarker, mannequinOpener), this);
         MannequinBreaker breaker = new MannequinBreaker(mannequins, mannequinWardrobes, access, renderQueue, getServer(),
                 getLogger());
         getServer().getPluginManager().registerEvents(

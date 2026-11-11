@@ -60,4 +60,7 @@ public interface SkysongWardrobeApi {
      * @return the API version, for example {@code "1.0.0"}
      */
     @NotNull String apiVersion();
+
+    /** Opens wardrobe menus: a player's, a Citizens NPC's or a mannequin's. */
+    @NotNull Menus menus();
 }

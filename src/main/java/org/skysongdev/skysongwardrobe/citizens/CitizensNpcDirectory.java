@@ -11,6 +11,7 @@ import org.skysongdev.skysongwardrobe.npc.NpcDirectory;
 import org.skysongdev.skysongwardrobe.npc.NpcInfo;
 
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /** Finds NPCs in Citizens' main registry and turns them into {@link NpcInfo}. */
@@ -29,6 +30,11 @@ final class CitizensNpcDirectory implements NpcDirectory {
     @Override
     public Optional<NpcInfo> byNumber(int number) {
         return info(registry.get().getById(number));
+    }
+
+    @Override
+    public Optional<NpcInfo> byId(UUID id) {
+        return info(registry.get().getByUniqueId(id));
     }
 
     @Override

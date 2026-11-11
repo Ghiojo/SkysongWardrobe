@@ -67,6 +67,7 @@ public final class WardrobeOpener {
             case OPENED -> Optional.empty();
             case WARDROBE_CLOSED -> Optional.of("wardrobe.closed");
             case NOT_A_PLAYER_NPC -> Optional.of("npc.not-a-player");
+            case UNAVAILABLE -> Optional.of("npc.unavailable");
             case NOT_FOUND -> Optional.of(wearer + ".not-found");
             case NO_ACCESS -> Optional.of(wearer + ".no-access");
             case IN_USE -> Optional.of(wearer + ".in-use");

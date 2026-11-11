@@ -12,5 +12,7 @@ public enum OpenOutcome {
     /** Someone else is dressing this wearer right now. */
     IN_USE,
     /** wardrobe.yml has errors, so every wardrobe is closed. */
-    WARDROBE_CLOSED
+    WARDROBE_CLOSED,
+    /** NPC wardrobes need Citizens, which is not installed or failed to hook. */
+    UNAVAILABLE
 }
