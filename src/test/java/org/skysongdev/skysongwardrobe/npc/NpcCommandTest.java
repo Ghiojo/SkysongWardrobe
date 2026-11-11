@@ -15,7 +15,9 @@ import org.skysongdev.skysongwardrobe.SkysongWardrobe;
 import org.skysongdev.skysongwardrobe.commands.CommandRunner;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenu;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
 import java.nio.file.Path;
@@ -77,8 +79,11 @@ class NpcCommandTest {
         directory.byNumber.put(7, baker);
         WardrobeRepository wardrobes = new WardrobeRepository(folder, Logger.getAnonymousLogger());
         NpcAccess access = NpcAccess.standard(() -> plugin.configuration().settings().npcPermissions());
-        commands = new CommandRunner(new NpcCommand(directory, skins, access, wardrobes, FakeItemTags::new,
-                plugin.configuration(), server, new NpcArchive(folder.resolve("removed"), Logger.getAnonymousLogger())));
+        WardrobeKinds kinds = new WardrobeKinds().register(WardrobeKind.NPC, wardrobes, (npc, editor) -> { });
+        NpcOpener opener = new NpcOpener(skins, access,
+                new WardrobeOpener(kinds, FakeItemTags::new, plugin.configuration(), server));
+        commands = new CommandRunner(new NpcCommand(directory, opener, FakeItemTags::new, plugin.configuration(),
+                new NpcArchive(folder.resolve("removed"), Logger.getAnonymousLogger())));
     }
 
     @AfterEach

@@ -18,8 +18,11 @@ import org.mockbukkit.mockbukkit.world.WorldMock;
 import org.skysongdev.skysongwardrobe.SkysongWardrobe;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
 import org.skysongdev.skysongwardrobe.render.ArmModel;
+import org.skysongdev.skysongwardrobe.wardrobe.OpenOutcome;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenu;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
 
 import java.io.IOException;
@@ -39,6 +42,7 @@ class MannequinInteractListenerTest {
     private PlayerMock owner;
     private MannequinMarker marker;
     private Entity entity;
+    private MannequinOpener opener;
     private MannequinInteractListener listener;
 
     @BeforeEach
@@ -53,10 +57,11 @@ class MannequinInteractListenerTest {
         MannequinRepository mannequins = MannequinRepository.load(folder, Logger.getAnonymousLogger());
         mannequins.save(new Mannequin(entity.getUniqueId(), owner.getUniqueId(), new ItemStack(Material.ARMOR_STAND),
                 "oak", ArmModel.CLASSIC));
-        listener = new MannequinInteractListener(mannequins,
-                new WardrobeRepository(folder.resolve("wardrobes"), Logger.getAnonymousLogger()), marker,
-                new OwnerAccess(() -> plugin.configuration().settings().mannequins()), FakeItemTags::new,
-                plugin.configuration(), server);
+        WardrobeKinds kinds = new WardrobeKinds().register(WardrobeKind.MANNEQUIN,
+                new WardrobeRepository(folder.resolve("wardrobes"), Logger.getAnonymousLogger()), (id, editor) -> { });
+        opener = new MannequinOpener(mannequins, new OwnerAccess(() -> plugin.configuration().settings().mannequins()),
+                new WardrobeOpener(kinds, FakeItemTags::new, plugin.configuration(), server));
+        listener = new MannequinInteractListener(marker, opener);
     }
 
     @AfterEach
@@ -116,6 +121,24 @@ class MannequinInteractListenerTest {
 
         assertFalse(looksAtMannequinMenu(staff));
         assertEquals("[Wardrobe] Someone else is dressing this mannequin right now.", message(staff));
+    }
+
+    @Test
+    void aCallerThatAlreadyDecidedSkipsTheOwnerCheck() {
+        PlayerMock stranger = server.addPlayer();
+
+        assertEquals(OpenOutcome.OPENED, opener.open(stranger, entity, false));
+        assertTrue(looksAtMannequinMenu(stranger));
+    }
+
+    @Test
+    void aMarkedEntityWithoutAMannequinOpensNothingQuietly() {
+        Entity orphan = entity.getWorld().spawn(entity.getLocation(), Zombie.class);
+        marker.mark(orphan);
+
+        assertTrue(click(owner, orphan).isCancelled());
+        assertFalse(looksAtMannequinMenu(owner));
+        assertEquals(null, owner.nextActionBar());
     }
 
     @Test

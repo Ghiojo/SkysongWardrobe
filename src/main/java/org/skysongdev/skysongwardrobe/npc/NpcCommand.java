@@ -5,16 +5,13 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.skysongdev.skysongwardrobe.commands.Permissions;
 import org.skysongdev.skysongwardrobe.commands.SubCommand;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.config.WardrobeLayout;
 import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
-import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
-import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenu;
-import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
+import org.skysongdev.skysongwardrobe.wardrobe.OpenOutcome;
 
 import java.util.List;
 import java.util.Optional;
@@ -23,31 +20,24 @@ import java.util.function.Supplier;
 /**
  * {@code /sw npc [number]}: opens a Citizens player NPC's wardrobe. Without a number it opens the
  * NPC the player selected, or else the one they are looking at, so owners who can't use
- * {@code /npc sel} only need to look at theirs. {@link NpcAccess} decides who may open which.
+ * {@code /npc sel} only need to look at theirs. {@link NpcOpener} checks who may open which.
  * {@code /sw npc removed} lists removed NPCs' archived wardrobes, for staff only.
  */
 public final class NpcCommand implements SubCommand {
     private static final String NUMBER = "number";
 
     private final NpcDirectory directory;
-    private final NpcSkins skins;
-    private final NpcAccess access;
-    private final WardrobeRepository wardrobes;
+    private final NpcOpener opener;
     private final Supplier<ItemTagGateway> tags;
     private final PluginConfiguration configuration;
-    private final Server server;
     private final NpcArchive archive;
 
-    public NpcCommand(NpcDirectory directory, NpcSkins skins, NpcAccess access, WardrobeRepository wardrobes,
-                      Supplier<ItemTagGateway> tags, PluginConfiguration configuration, Server server,
-                      NpcArchive archive) {
+    public NpcCommand(NpcDirectory directory, NpcOpener opener, Supplier<ItemTagGateway> tags,
+                      PluginConfiguration configuration, NpcArchive archive) {
         this.directory = directory;
-        this.skins = skins;
-        this.access = access;
-        this.wardrobes = wardrobes;
+        this.opener = opener;
         this.tags = tags;
         this.configuration = configuration;
-        this.server = server;
         this.archive = archive;
     }
 
@@ -74,20 +64,9 @@ public final class NpcCommand implements SubCommand {
     }
 
     private int open(Player viewer, Optional<NpcInfo> target) {
-        Optional<WardrobeLayout> layout = configuration.layout();
-        Optional<String> refusal = target.isEmpty() ? Optional.of("npc.not-found")
-                : !skins.isDressable(target.get().id()) ? Optional.of("npc.not-a-player")
-                : !access.canOpen(viewer, target.get()) ? Optional.of("npc.no-access")
-                : layout.isEmpty() ? Optional.of("wardrobe.closed")
-                : inUse(target.get()) ? Optional.of("npc.in-use")
-                : Optional.empty();
-        if (refusal.isPresent()) {
-            configuration.messages().send(viewer, refusal.get());
-            return 0;
-        }
-        viewer.openInventory(new WardrobeMenu(WardrobeKind.NPC, wardrobes.load(target.get().id()), layout.get(),
-                tags.get()).getInventory());
-        return Command.SINGLE_SUCCESS;
+        OpenOutcome outcome = opener.open(viewer, target, true);
+        opener.tell(viewer, outcome);
+        return outcome == OpenOutcome.OPENED ? Command.SINGLE_SUCCESS : 0;
     }
 
     private int openRemoved(Player viewer) {
@@ -104,11 +83,5 @@ public final class NpcCommand implements SubCommand {
         }
         viewer.openInventory(menu.getInventory());
         return Command.SINGLE_SUCCESS;
-    }
-
-    private boolean inUse(NpcInfo npc) {
-        return server.getOnlinePlayers().stream()
-                .flatMap(online -> WardrobeMenu.of(online.getOpenInventory()).stream())
-                .anyMatch(menu -> menu.shows(WardrobeKind.NPC, npc.id()));
     }
 }

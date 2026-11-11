@@ -35,6 +35,7 @@ import org.skysongdev.skysongwardrobe.mannequin.MannequinBodies;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinBreakListener;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinBreaker;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinInteractListener;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinOpener;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinMarker;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinPlaceListener;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinPlacer;
@@ -194,7 +195,8 @@ public class SkysongWardrobe extends JavaPlugin {
         OutfitRenderer outfits = startRendering(itemTags);
         startMannequins(itemTags, outfits);
         hookCitizens(outfits);
-        npcWardrobes().ifPresent(npcs -> subCommands.add(npcs.command(CitizensHook.directory(), itemTags)));
+        npcWardrobes().ifPresent(npcs -> subCommands.add(npcs.command(CitizensHook.directory(),
+                npcs.opener(wardrobeOpener), itemTags)));
         WardrobeCommands commands = new WardrobeCommands(subCommands);
         hookSkysongStats();
 
@@ -236,8 +238,8 @@ public class SkysongWardrobe extends JavaPlugin {
                 itemTags, configuration, mannequin -> renderer.render(mannequin.id()), getLogger());
         getServer().getPluginManager().registerEvents(new MannequinPlaceListener(placer, configuration::messages), this);
         getServer().getPluginManager().registerEvents(new MannequinRenderTrigger(renderer), this);
-        getServer().getPluginManager().registerEvents(new MannequinInteractListener(mannequins, mannequinWardrobes,
-                mannequinMarker, access, itemTags, configuration, getServer()), this);
+        getServer().getPluginManager().registerEvents(new MannequinInteractListener(mannequinMarker,
+                new MannequinOpener(mannequins, access, wardrobeOpener)), this);
         MannequinBreaker breaker = new MannequinBreaker(mannequins, mannequinWardrobes, access, renderQueue, getServer(),
                 getLogger());
         getServer().getPluginManager().registerEvents(
