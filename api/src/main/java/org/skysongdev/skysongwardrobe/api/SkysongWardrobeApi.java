@@ -66,4 +66,7 @@ public interface SkysongWardrobeApi {
 
     /** Citizens NPC wardrobes: finding NPCs, who may open them, and extra access rules. */
     @NotNull Npcs npcs();
+
+    /** What players, NPCs and mannequins wear: read it, or change it slot by slot. */
+    @NotNull Outfits outfits();
 }

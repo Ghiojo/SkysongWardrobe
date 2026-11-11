@@ -73,6 +73,7 @@ import org.skysongdev.skysongwardrobe.storage.StorageStartup;
 import org.skysongdev.skysongwardrobe.render.WearerKind;
 import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
 import org.skysongdev.skysongwardrobe.stats.SkysongStatsHook;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeEditor;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenuListener;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
@@ -211,7 +212,9 @@ public class SkysongWardrobe extends JavaPlugin {
             wardrobeCommand.register(event.registrar());
         });
         getServer().getPluginManager().registerEvents(new CloseActions(new BukkitTaskRunner(this)), this);
-        api = new SkysongWardrobeApiImpl(wardrobeOpener, mannequinOpener, () -> Optional.ofNullable(npcHooks), getServer());
+        api = new SkysongWardrobeApiImpl(new SkysongWardrobeApiImpl.Parts(wardrobeOpener, mannequinOpener,
+                new WardrobeEditor(wardrobeKinds, itemTags, configuration, getServer(), getLogger()), configuration,
+                mannequins), () -> Optional.ofNullable(npcHooks), getServer());
         getServer().getPluginManager().registerEvents(api.npcRules(), this);
         api.register(getServer().getServicesManager(), this);
     }

@@ -48,7 +48,10 @@ public final class NpcRenderer {
         this.logger = logger;
     }
 
-    /** Renders the NPC's outfit, telling {@code editor} how it went. Main thread only. */
+    /**
+     * Renders the NPC's outfit, telling {@code editor} how it went; null when another plugin
+     * changed it and nobody is told. Main thread only.
+     */
     public void render(UUID npc, UUID editor) {
         Optional<WardrobeLayout> layout = configuration.layout();
         if (layout.isEmpty() || !skins.isDressable(npc)) {
@@ -79,7 +82,7 @@ public final class NpcRenderer {
     }
 
     private void tell(UUID editor, String key) {
-        Player online = server.getPlayer(editor);
+        Player online = editor == null ? null : server.getPlayer(editor);
         if (online != null) {
             configuration.messages().send(online, key);
         }

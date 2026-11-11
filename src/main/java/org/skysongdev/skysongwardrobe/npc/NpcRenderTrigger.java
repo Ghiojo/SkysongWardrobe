@@ -14,6 +14,6 @@ public final class NpcRenderTrigger implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onUpdate(NpcUpdateEvent event) {
-        renderer.render(event.getNpc(), event.getEditor().getUniqueId());
+        renderer.render(event.getNpc(), event.getEditor() == null ? null : event.getEditor().getUniqueId());
     }
 }

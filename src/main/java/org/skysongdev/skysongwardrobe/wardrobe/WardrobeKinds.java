@@ -16,7 +16,7 @@ import java.util.function.BiConsumer;
 public final class WardrobeKinds {
     /**
      * One kind's storage, and what to do once a wearer's wardrobe changed: {@code changed} gets
-     * the wearer's id and the player who closed the menu.
+     * the wearer's id and the player who closed the menu, or null when another plugin changed it.
      */
     public record Kind(WardrobeRepository wardrobes, BiConsumer<UUID, Player> changed) {
     }
