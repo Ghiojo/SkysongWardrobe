@@ -14,7 +14,9 @@ import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import org.skysongdev.skysongwardrobe.SkysongWardrobe;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
 import org.skysongdev.skysongwardrobe.wardrobe.Wardrobe;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenu;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -40,8 +42,9 @@ class WardrobeCommandTest {
         alice = server.addPlayer("Alice");
         bob = server.addPlayer("Bob");
         alice.addAttachment(plugin, WardrobeCommand.PERMISSION, true);
-        dispatcher.getRoot().addChild(new WardrobeCommand(plugin.wardrobes(), FakeItemTags::new,
-                plugin.configuration(), server).tree());
+        dispatcher.getRoot().addChild(new WardrobeCommand(new WardrobeOpener(
+                WardrobeKinds.of(plugin.wardrobes(), plugin.mannequinWardrobes(), server), FakeItemTags::new,
+                plugin.configuration(), server), plugin.configuration(), server).tree());
     }
 
     @AfterEach

@@ -35,6 +35,7 @@ import org.skysongdev.skysongwardrobe.mannequin.MannequinBodies;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinBreakListener;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinBreaker;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinInteractListener;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinOpener;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinMarker;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinPlaceListener;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinPlacer;
@@ -72,6 +73,7 @@ import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
 import org.skysongdev.skysongwardrobe.stats.SkysongStatsHook;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenuListener;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
 import org.skysongdev.skysongwardrobe.worldguard.RegionAccess;
 import org.skysongdev.skysongwardrobe.worldguard.WorldGuardRegionRules;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
@@ -121,6 +123,7 @@ public class SkysongWardrobe extends JavaPlugin {
     private StorageBackend storage;
     private AsyncWriter storageWriter;
     private NpcWardrobes npcWardrobes;
+    private WardrobeOpener wardrobeOpener;
     private SkysongWardrobeApiImpl api;
 
     /** WorldGuard is optional; its flags must be registered before it enables, so here. */
@@ -183,15 +186,17 @@ public class SkysongWardrobe extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
         wardrobes = new WardrobeRepository(storage.wardrobes(WardrobeKind.PLAYER), storageWriter, getLogger());
         loadMannequins();
-        WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes, itemTags, configuration, getServer());
         wardrobeKinds = WardrobeKinds.of(wardrobes, mannequinWardrobes, getServer());
+        wardrobeOpener = new WardrobeOpener(wardrobeKinds, itemTags, configuration, getServer());
+        WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobeOpener, configuration, getServer());
         getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobeKinds, configuration, getServer(),
                 getLogger()), this);
         getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer(), getLogger()), this);
         OutfitRenderer outfits = startRendering(itemTags);
         startMannequins(itemTags, outfits);
         hookCitizens(outfits);
-        npcWardrobes().ifPresent(npcs -> subCommands.add(npcs.command(CitizensHook.directory(), itemTags)));
+        npcWardrobes().ifPresent(npcs -> subCommands.add(npcs.command(CitizensHook.directory(),
+                npcs.opener(wardrobeOpener), itemTags)));
         WardrobeCommands commands = new WardrobeCommands(subCommands);
         hookSkysongStats();
 
@@ -233,8 +238,8 @@ public class SkysongWardrobe extends JavaPlugin {
                 itemTags, configuration, mannequin -> renderer.render(mannequin.id()), getLogger());
         getServer().getPluginManager().registerEvents(new MannequinPlaceListener(placer, configuration::messages), this);
         getServer().getPluginManager().registerEvents(new MannequinRenderTrigger(renderer), this);
-        getServer().getPluginManager().registerEvents(new MannequinInteractListener(mannequins, mannequinWardrobes,
-                mannequinMarker, access, itemTags, configuration, getServer()), this);
+        getServer().getPluginManager().registerEvents(new MannequinInteractListener(mannequinMarker,
+                new MannequinOpener(mannequins, access, wardrobeOpener)), this);
         MannequinBreaker breaker = new MannequinBreaker(mannequins, mannequinWardrobes, access, renderQueue, getServer(),
                 getLogger());
         getServer().getPluginManager().registerEvents(
