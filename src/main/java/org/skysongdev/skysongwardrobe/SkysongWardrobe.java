@@ -3,6 +3,7 @@ package org.skysongdev.skysongwardrobe;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.skysongdev.skysongitems.api.SkysongItemsApi;
+import org.skysongdev.skysongwardrobe.apiimpl.SkysongWardrobeApiImpl;
 import org.skysongdev.skysongwardrobe.citizens.CitizensHook;
 import org.skysongdev.skysongwardrobe.commands.ApplyCommand;
 import org.skysongdev.skysongwardrobe.commands.DeleteCommand;
@@ -120,6 +121,7 @@ public class SkysongWardrobe extends JavaPlugin {
     private StorageBackend storage;
     private AsyncWriter storageWriter;
     private NpcWardrobes npcWardrobes;
+    private SkysongWardrobeApiImpl api;
 
     /** WorldGuard is optional; its flags must be registered before it enables, so here. */
     @Override
@@ -197,6 +199,8 @@ public class SkysongWardrobe extends JavaPlugin {
             commands.register(event.registrar());
             wardrobeCommand.register(event.registrar());
         });
+        api = new SkysongWardrobeApiImpl();
+        api.register(getServer().getServicesManager(), this);
     }
 
     /** Owner and staff only, or WorldGuard's region flags first when WorldGuard is installed. */
@@ -310,6 +314,10 @@ public class SkysongWardrobe extends JavaPlugin {
 
     @Override
     public void onDisable() {
+        if (api != null) {
+            api.unregister(getServer().getServicesManager());
+            api = null;
+        }
         // Waiting render jobs are already in render-queue.yml and resume on the next start.
         if (storageWriter != null) {
             // Finishes the queued saves before the database closes.
