@@ -5,6 +5,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.skysongdev.skysongitems.api.SkysongItemsApi;
 import org.skysongdev.skysongwardrobe.apiimpl.CloseActions;
 import org.skysongdev.skysongwardrobe.apiimpl.NpcHooks;
+import org.skysongdev.skysongwardrobe.apiimpl.RenderEvents;
 import org.skysongdev.skysongwardrobe.apiimpl.SkysongWardrobeApiImpl;
 import org.skysongdev.skysongwardrobe.citizens.CitizensHook;
 import org.skysongdev.skysongwardrobe.commands.ApplyCommand;
@@ -212,6 +213,9 @@ public class SkysongWardrobe extends JavaPlugin {
             wardrobeCommand.register(event.registrar());
         });
         getServer().getPluginManager().registerEvents(new CloseActions(new BukkitTaskRunner(this)), this);
+        RenderEvents renderEvents = new RenderEvents(getServer(), new BukkitTaskRunner(this));
+        renderRouter.observe(renderEvents);
+        outfits.observe(renderEvents);
         api = new SkysongWardrobeApiImpl(new SkysongWardrobeApiImpl.Parts(wardrobeOpener, mannequinOpener,
                 new WardrobeEditor(wardrobeKinds, itemTags, configuration, getServer(), getLogger()), configuration,
                 mannequins), () -> Optional.ofNullable(npcHooks), getServer());

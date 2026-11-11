@@ -36,6 +36,17 @@ class RenderRouterTest {
         assertEquals(List.of(), players);
     }
 
+    @Test
+    void observersHearEveryKindAfterItsListener() {
+        List<String> heard = new ArrayList<>();
+        router.route(WearerKind.PLAYER, recorder(heard)).observe(recorder(heard));
+
+        router.signed(WEARER, WearerKind.PLAYER, SIGNED);
+        router.failed(WEARER, WearerKind.NPC, "nope");
+
+        assertEquals(List.of("signed value", "signed value", "failed nope"), heard);
+    }
+
     private static RenderListener recorder(List<String> heard) {
         return new RenderListener() {
             @Override
