@@ -1,5 +1,9 @@
 package org.skysongdev.skysongwardrobe.wardrobe;
 
+import org.skysongdev.skysongwardrobe.api.WearerType;
+
+import java.util.Optional;
+
 /** Whose wardrobe a menu shows. Each kind keeps its wardrobes apart, keyed by the wearer's UUID. */
 public enum WardrobeKind {
     PLAYER(false, true, false),
@@ -24,6 +28,16 @@ public enum WardrobeKind {
      */
     public boolean exclusive() {
         return exclusive;
+    }
+
+    /** Who wears this kind of wardrobe, as the API names it; empty for a removed NPC's archive. */
+    public Optional<WearerType> wearerType() {
+        return switch (this) {
+            case PLAYER -> Optional.of(WearerType.PLAYER);
+            case MANNEQUIN -> Optional.of(WearerType.MANNEQUIN);
+            case NPC -> Optional.of(WearerType.NPC);
+            case REMOVED_NPC -> Optional.empty();
+        };
     }
 
     /** Whether items may go in, or only come out. */

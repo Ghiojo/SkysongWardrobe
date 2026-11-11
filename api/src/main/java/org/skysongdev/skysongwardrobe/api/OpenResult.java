@@ -18,5 +18,7 @@ public enum OpenResult {
     /** wardrobe.yml has errors, so every wardrobe is closed until staff fix it. */
     WARDROBE_CLOSED,
     /** NPC wardrobes need Citizens, which is not installed or failed to hook. */
-    UNAVAILABLE
+    UNAVAILABLE,
+    /** Another plugin cancelled the {@code WardrobeOpenEvent}; SkysongWardrobe sent no message. */
+    CANCELLED
 }

@@ -2,6 +2,10 @@ package org.skysongdev.skysongwardrobe.wardrobe;
 
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
+import org.skysongdev.skysongwardrobe.api.Wearer;
+import org.skysongdev.skysongwardrobe.api.WearerType;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
+import org.skysongdev.skysongwardrobe.api.event.WardrobeOpenEvent;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.config.WardrobeLayout;
 import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
@@ -32,11 +36,12 @@ public final class WardrobeOpener {
     }
 
     /**
-     * Shows {@code viewer} the wardrobe of {@code wearer}, a wearer of the given kind.
+     * Shows {@code viewer} the wardrobe of {@code wearer}, a wearer of the given kind, unless
+     * another plugin cancels the {@link WardrobeOpenEvent} that {@code source} asked for.
      *
      * @throws IllegalStateException when nothing registered that kind of wardrobe
      */
-    public OpenOutcome open(Player viewer, WardrobeKind kind, UUID wearer) {
+    public OpenOutcome open(Player viewer, WardrobeKind kind, UUID wearer, OpenSource source) {
         WardrobeKinds.Kind stored = kinds.get(kind)
                 .orElseThrow(() -> new IllegalStateException("Nothing stores " + kind + " wardrobes."));
         Optional<WardrobeLayout> layout = configuration.layout();
@@ -45,6 +50,14 @@ public final class WardrobeOpener {
         }
         if (kind.exclusive() && inUse(kind, wearer)) {
             return OpenOutcome.IN_USE;
+        }
+        Optional<WearerType> type = kind.wearerType();
+        if (type.isPresent()) {
+            WardrobeOpenEvent event = new WardrobeOpenEvent(viewer, new Wearer(type.get(), wearer), source);
+            server.getPluginManager().callEvent(event);
+            if (event.isCancelled()) {
+                return OpenOutcome.CANCELLED;
+            }
         }
         viewer.openInventory(new WardrobeMenu(kind, stored.wardrobes().load(wearer), layout.get(), tags.get())
                 .getInventory());
@@ -64,7 +77,7 @@ public final class WardrobeOpener {
             case PLAYER -> "wardrobe";
         };
         return switch (outcome) {
-            case OPENED -> Optional.empty();
+            case OPENED, CANCELLED -> Optional.empty();
             case WARDROBE_CLOSED -> Optional.of("wardrobe.closed");
             case NOT_A_PLAYER_NPC -> Optional.of("npc.not-a-player");
             case UNAVAILABLE -> Optional.of("npc.unavailable");

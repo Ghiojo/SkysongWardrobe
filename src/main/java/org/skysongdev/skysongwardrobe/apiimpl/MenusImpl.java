@@ -7,6 +7,7 @@ import org.skysongdev.skysongwardrobe.api.Access;
 import org.skysongdev.skysongwardrobe.api.Menus;
 import org.skysongdev.skysongwardrobe.api.OpenOptions;
 import org.skysongdev.skysongwardrobe.api.OpenResult;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.commands.Permissions;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommand;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinOpener;
@@ -45,7 +46,7 @@ final class MenusImpl implements Menus {
         Objects.requireNonNull(owner, "owner");
         OpenOutcome outcome = options.access() == Access.HONOR && !mayOpenPlayer(viewer, owner)
                 ? OpenOutcome.NO_ACCESS
-                : opener.open(viewer, WardrobeKind.PLAYER, owner);
+                : opener.open(viewer, WardrobeKind.PLAYER, owner, OpenSource.API);
         return finish(viewer, WardrobeKind.PLAYER, outcome, options);
     }
 
@@ -65,7 +66,7 @@ final class MenusImpl implements Menus {
         check(viewer, options);
         Entity body = server.getEntity(Objects.requireNonNull(mannequin, "mannequin"));
         OpenOutcome outcome = body == null ? OpenOutcome.NOT_FOUND
-                : mannequins.open(viewer, body, options.access() == Access.HONOR);
+                : mannequins.open(viewer, body, options.access() == Access.HONOR, OpenSource.API);
         return finish(viewer, WardrobeKind.MANNEQUIN, outcome, options);
     }
 
@@ -73,7 +74,8 @@ final class MenusImpl implements Menus {
         check(viewer, options);
         Optional<NpcHooks> hooks = npcs.get();
         OpenOutcome outcome = hooks.isEmpty() ? OpenOutcome.UNAVAILABLE
-                : hooks.get().opener().open(viewer, find.apply(hooks.get()), options.access() == Access.HONOR);
+                : hooks.get().opener().open(viewer, find.apply(hooks.get()), options.access() == Access.HONOR,
+                        OpenSource.API);
         return finish(viewer, WardrobeKind.NPC, outcome, options);
     }
 

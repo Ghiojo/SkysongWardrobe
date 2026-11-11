@@ -11,6 +11,7 @@ import io.papermc.paper.command.brigadier.Commands;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
@@ -78,6 +79,6 @@ public final class WardrobeCommand {
     }
 
     private void open(Player viewer, UUID owner) {
-        opener.tell(viewer, WardrobeKind.PLAYER, opener.open(viewer, WardrobeKind.PLAYER, owner));
+        opener.tell(viewer, WardrobeKind.PLAYER, opener.open(viewer, WardrobeKind.PLAYER, owner, OpenSource.COMMAND));
     }
 }

@@ -6,6 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.entity.Player;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.commands.Permissions;
 import org.skysongdev.skysongwardrobe.commands.SubCommand;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
@@ -64,7 +65,7 @@ public final class NpcCommand implements SubCommand {
     }
 
     private int open(Player viewer, Optional<NpcInfo> target) {
-        OpenOutcome outcome = opener.open(viewer, target, true);
+        OpenOutcome outcome = opener.open(viewer, target, true, OpenSource.COMMAND);
         opener.tell(viewer, outcome);
         return outcome == OpenOutcome.OPENED ? Command.SINGLE_SUCCESS : 0;
     }

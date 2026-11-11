@@ -52,7 +52,7 @@ class OpenOptionsTest {
 
     @Test
     void everyRefusalHasAResultNamedAfterIt() {
-        assertEquals(7, OpenResult.values().length);
+        assertEquals(8, OpenResult.values().length);
         assertEquals(OpenResult.UNAVAILABLE, OpenResult.valueOf("UNAVAILABLE"));
     }
 }

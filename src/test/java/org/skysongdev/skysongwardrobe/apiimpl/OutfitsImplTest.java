@@ -15,6 +15,7 @@ import org.skysongdev.skysongwardrobe.api.ChangeResult;
 import org.skysongdev.skysongwardrobe.api.Outfits;
 import org.skysongdev.skysongwardrobe.api.SkysongWardrobeApi;
 import org.skysongdev.skysongwardrobe.api.Wearer;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinRepository;
 import org.skysongdev.skysongwardrobe.npc.NpcInfo;
@@ -128,7 +129,7 @@ class OutfitsImplTest {
     @Test
     void anOpenMenuShowsTheChangeAtOnce() {
         new WardrobeOpener(kinds, FakeItemTags::new, plugin.configuration(), server)
-                .open(alice, WardrobeKind.PLAYER, alice.getUniqueId());
+                .open(alice, WardrobeKind.PLAYER, alice.getUniqueId(), OpenSource.API);
 
         outfits.setItem(Wearer.player(alice.getUniqueId()), "coat", coat());
 

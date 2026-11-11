@@ -4,6 +4,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.wardrobe.OpenOutcome;
 
 /**
@@ -29,7 +30,7 @@ public final class MannequinInteractListener implements Listener {
         if (event.getHand() != EquipmentSlot.HAND) {
             return;
         }
-        OpenOutcome outcome = opener.open(event.getPlayer(), event.getRightClicked(), true);
+        OpenOutcome outcome = opener.open(event.getPlayer(), event.getRightClicked(), true, OpenSource.INTERACT);
         // A marked entity whose mannequin is gone is cleaned up elsewhere; nothing to say.
         if (outcome != OpenOutcome.NOT_FOUND) {
             opener.tell(event.getPlayer(), outcome);

@@ -8,6 +8,7 @@ import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import org.skysongdev.skysongwardrobe.SkysongWardrobe;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
 import org.skysongdev.skysongwardrobe.wardrobe.OpenOutcome;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
@@ -54,13 +55,13 @@ class NpcOpenerTest {
 
     @Test
     void theAccessRulesDecideByDefault() {
-        assertEquals(OpenOutcome.NO_ACCESS, opener.open(stranger, Optional.of(baker), true));
+        assertEquals(OpenOutcome.NO_ACCESS, opener.open(stranger, Optional.of(baker), true, OpenSource.COMMAND));
         assertFalse(WardrobeMenu.of(stranger.getOpenInventory()).isPresent());
     }
 
     @Test
     void aCallerThatAlreadyDecidedSkipsTheAccessRules() {
-        assertEquals(OpenOutcome.OPENED, opener.open(stranger, Optional.of(baker), false));
+        assertEquals(OpenOutcome.OPENED, opener.open(stranger, Optional.of(baker), false, OpenSource.COMMAND));
         assertTrue(WardrobeMenu.of(stranger.getOpenInventory()).filter(menu -> menu.shows(WardrobeKind.NPC, baker.id()))
                 .isPresent());
     }
@@ -69,11 +70,11 @@ class NpcOpenerTest {
     void skippingAccessStillNeedsAPlayerNpc() {
         skins.dressable.clear();
 
-        assertEquals(OpenOutcome.NOT_A_PLAYER_NPC, opener.open(stranger, Optional.of(baker), false));
+        assertEquals(OpenOutcome.NOT_A_PLAYER_NPC, opener.open(stranger, Optional.of(baker), false, OpenSource.COMMAND));
     }
 
     @Test
     void noNpcIsNotFound() {
-        assertEquals(OpenOutcome.NOT_FOUND, opener.open(stranger, Optional.empty(), false));
+        assertEquals(OpenOutcome.NOT_FOUND, opener.open(stranger, Optional.empty(), false, OpenSource.COMMAND));
     }
 }
