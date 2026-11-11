@@ -50,6 +50,7 @@ player only ever has one look waiting.
 | Command | What it does | Permission |
 | --- | --- | --- |
 | `/wardrobe [player]` | Opens your wardrobe, or another player's | `skysongwardrobe.wardrobe` (`.other` for another player) |
+| `/wardrobe <owner> <viewer>` | Opens `owner`'s wardrobe for the online player `viewer` (works from the console) | `skysongwardrobe.wardrobe.other` |
 | `/sw gallery [player]` | Opens your gallery, or another player's | a gallery permission (`.other` for another player) |
 | `/sw upload <id> <link> [icon] [name...]` | Adds a skin from a link to your gallery | a gallery permission |
 | `/sw edit <id> <name\|icon\|link> <value...>` | Changes an entry of your gallery | a gallery permission |
@@ -57,6 +58,7 @@ player only ever has one look waiting.
 | `/sw apply [player:]id <regular\|dyed>` | Puts a gallery entry on the item in your main hand | an apply permission (`.other` for another player's entry) |
 | `/sw unapply <regular\|dyed>` | Removes a layer from the item in your main hand | an apply permission |
 | `/sw npc [number]` | Opens a Citizens NPC's wardrobe | an NPC permission (`.other` for NPCs you don't own) |
+| `/sw npc <number> <player>` | Opens an NPC's wardrobe for the online player `player`, skipping the access rules (works from the console) | the `.other` variant of an NPC permission |
 | `/sw npc removed` | Takes items back from removed NPCs' wardrobes | the `.other` variant of an NPC permission |
 | `/sw reload` | Reloads every config file | `skysongwardrobe.admin` |
 | `/sw storage import` | Copies the YAML files into the database `storage.type` names (console only) | `skysongwardrobe.admin` |
@@ -180,7 +182,10 @@ NPCs, can't.
 
 `/sw npc` opens the wardrobe of the NPC you selected with `/npc sel`, or else the one you
 are looking at (within 5 blocks). `/sw npc <number>` opens one by its Citizens number, as
-shown by `/npc list`. Only one person can dress an NPC at a time. Its new look is drawn
+shown by `/npc list`. `/sw npc <number> <player>` opens it for someone else; it skips the
+owner check, since only staff and the console can run it, which lets a menu plugin bind a
+button to it, for example `[console] sw npc 12 %player_name%`. Other plugins can also open
+it through the [API](#api-for-other-plugins). Only one person can dress an NPC at a time. Its new look is drawn
 when the menu closes. In the MineSkin queue, player looks go first, then NPCs, then mannequins.
 
 The NPC wardrobe has the same slots as a player's and no equipment slots; give NPCs
@@ -204,8 +209,9 @@ Opening an NPC's wardrobe needs one of the permissions under `npcs.permissions` 
 - holding the `.other` variant of one of those permissions, such as
   `skysongwardrobe.npc.other`, which reaches every NPC.
 
-The access check is a list of rules where any one rule can allow, so later features (such
-as NPCs that belong to a SkysongEconomy business) can add a rule without changing the others.
+The access check is a list of rules where any one rule can allow, so other plugins (such
+as SkysongEconomy for NPCs that belong to a business) add a rule through the
+[API](#api-for-other-plugins) without changing the others.
 
 ### Removed and copied NPCs
 
@@ -325,6 +331,66 @@ fail with "you are not allowed to generate private skins". Skins are never uploa
 Keep the key private. If MineSkin asks the plugin to slow down, uploads pause and resume
 by themselves. `render.upload-cooldown-seconds` sets the shortest time between two
 uploads for the same player.
+
+## API for other plugins
+
+SkysongWardrobe has a public API, set up like the SkysongItems and SkysongStats ones: the
+`api` module is published by JitPack from each git tag, and its classes ship inside the
+plugin jar, so never shade them.
+
+```groovy
+repositories { maven { url 'https://jitpack.io' } }
+dependencies { compileOnly 'com.github.Ghiojo:SkysongWardrobe:<tag>' }
+```
+
+Add `depend: [SkysongWardrobe]` (or `softdepend`) to your plugin.yml, then get the API with
+`SkysongWardrobeApi.get()`, or `Bukkit.getServicesManager().load(SkysongWardrobeApi.class)`.
+Only the `org.skysongdev.skysongwardrobe.api` package is stable; everything else is internal.
+Call it on the main thread. `apiVersion()` tells you which version the server runs.
+
+| Part | What it does |
+| --- | --- |
+| `menus()` | Opens a player's, a Citizens NPC's (by number or UUID) or a mannequin's wardrobe for a player |
+| `npcs()` | Finds NPCs, tells whether a player may open one (to show or hide a button), adds access rules |
+| `outfits()` | Reads what a player, NPC or mannequin wears, and puts or clears items slot by slot |
+
+A button in your own menu that opens an NPC's wardrobe and comes back afterwards:
+
+```java
+SkysongWardrobeApi wardrobe = SkysongWardrobeApi.get();
+if (wardrobe.npcs().canOpenWardrobe(player, 12)) {
+    OpenResult result = wardrobe.menus().openNpcWardrobe(player, 12, OpenOptions.defaults()
+            .onClose(closed -> { if (closed.isOnline()) myMenu.open(closed); }));
+}
+```
+
+`OpenOptions` honours the usual access rules unless you pass `access(Access.BYPASS)`, sends
+the usual message when a wardrobe does not open unless you pass `silent()`, and runs
+`onClose` one tick after the wardrobe closes. Every call returns an `OpenResult` saying why
+it did not open, if it didn't.
+
+Letting a business's staff dress its NPCs:
+
+```java
+wardrobe.npcs().registerAccessRule(this, (viewer, npc) -> businesses.worksFor(viewer, npc.id()));
+```
+
+Rules can only let more players in, and leave when your plugin disables. Changing an outfit
+follows the menu's slot rules and renders the wearer again:
+
+```java
+ChangeResult result = wardrobe.outfits().setItem(Wearer.npc(npcId), "coat", coatItem);
+```
+
+Events, in `org.skysongdev.skysongwardrobe.api.event`:
+
+- `WardrobeOpenEvent`: a wardrobe is about to open; cancel it to keep it closed.
+- `WardrobeCloseEvent`: a wardrobe menu closed, and whether anything changed.
+- `OutfitRenderedEvent`: a wearer's new skin is on, or MineSkin could not sign it.
+
+To publish a version, push a git tag matching the API version (the first is `1.0.0`) and open
+`https://jitpack.io/#Ghiojo/SkysongWardrobe` to build it. JitPack only builds public
+repositories unless the account has a private plan.
 
 ## Development
 
