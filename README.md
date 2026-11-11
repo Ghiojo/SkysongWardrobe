@@ -388,7 +388,7 @@ Events, in `org.skysongdev.skysongwardrobe.api.event`:
 - `WardrobeCloseEvent`: a wardrobe menu closed, and whether anything changed.
 - `OutfitRenderedEvent`: a wearer's new skin is on, or MineSkin could not sign it.
 
-To publish a version, push a git tag (for example `1.1.0`) and open
+To publish a version, push a git tag matching the API version (the first is `1.0.0`) and open
 `https://jitpack.io/#Ghiojo/SkysongWardrobe` to build it. JitPack only builds public
 repositories unless the account has a private plan.
 
