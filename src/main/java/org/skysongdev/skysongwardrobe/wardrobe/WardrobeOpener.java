@@ -1,6 +1,7 @@
 package org.skysongdev.skysongwardrobe.wardrobe;
 
 import org.bukkit.Server;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.skysongdev.skysongwardrobe.api.Wearer;
 import org.skysongdev.skysongwardrobe.api.WearerType;
@@ -64,9 +65,12 @@ public final class WardrobeOpener {
         return OpenOutcome.OPENED;
     }
 
-    /** Tells {@code viewer} why a wardrobe of the given kind did not open; nothing if it did. */
-    public void tell(Player viewer, WardrobeKind kind, OpenOutcome outcome) {
-        messageKey(kind, outcome).ifPresent(key -> configuration.messages().send(viewer, key));
+    /**
+     * Tells {@code sender} why a wardrobe of the given kind did not open; nothing if it did. The
+     * sender is the viewer, or whoever opened it for them, such as the console.
+     */
+    public void tell(CommandSender sender, WardrobeKind kind, OpenOutcome outcome) {
+        messageKey(kind, outcome).ifPresent(key -> configuration.messages().send(sender, key));
     }
 
     /** The messages.yml key explaining the outcome, if it needs explaining. */

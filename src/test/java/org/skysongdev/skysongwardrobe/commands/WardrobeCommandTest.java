@@ -1,9 +1,11 @@
 package org.skysongdev.skysongwardrobe.commands;
 
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -98,7 +100,36 @@ class WardrobeCommandTest {
         assertEquals("[Wardrobe] The wardrobe is closed until staff fix wardrobe.yml.", nextActionBar(alice));
     }
 
-    private void run(PlayerMock sender, String command) throws CommandSyntaxException {
+    @Test
+    void theConsoleOpensAWardrobeForAnOnlinePlayer() throws CommandSyntaxException {
+        run(server.getConsoleSender(), "wardrobe Alice Bob");
+
+        WardrobeMenu menu = assertInstanceOf(WardrobeMenu.class, bob.getOpenInventory().getTopInventory().getHolder());
+        assertEquals(alice.getUniqueId(), menu.wardrobe().owner());
+    }
+
+    @Test
+    void theConsoleMustNameWhoSeesIt() throws CommandSyntaxException {
+        run(server.getConsoleSender(), "wardrobe Alice");
+
+        assertEquals("[Wardrobe] From the console, name the player to open the wardrobe for.",
+                PlainTextComponentSerializer.plainText().serialize(server.getConsoleSender().nextComponentMessage()));
+    }
+
+    @Test
+    void aViewerWhoIsOfflineIsReported() throws CommandSyntaxException {
+        run(server.getConsoleSender(), "wardrobe Alice Nobody");
+
+        assertEquals("[Wardrobe] Nobody is not online.",
+                PlainTextComponentSerializer.plainText().serialize(server.getConsoleSender().nextComponentMessage()));
+    }
+
+    @Test
+    void openingForSomeoneElseNeedsOther() {
+        assertThrows(CommandSyntaxException.class, () -> run(alice, "wardrobe Alice Bob"));
+    }
+
+    private void run(CommandSender sender, String command) throws CommandSyntaxException {
         CommandSourceStack source = mock(CommandSourceStack.class);
         when(source.getSender()).thenReturn(sender);
         dispatcher.execute(command, source);
