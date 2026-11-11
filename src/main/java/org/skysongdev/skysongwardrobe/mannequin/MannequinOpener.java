@@ -2,6 +2,7 @@ package org.skysongdev.skysongwardrobe.mannequin;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.wardrobe.OpenOutcome;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
@@ -28,7 +29,7 @@ public final class MannequinOpener {
      *
      * @param checkAccess false when the caller already decided the viewer may open it
      */
-    public OpenOutcome open(Player viewer, Entity body, boolean checkAccess) {
+    public OpenOutcome open(Player viewer, Entity body, boolean checkAccess, OpenSource source) {
         Optional<Mannequin> mannequin = mannequins.find(body.getUniqueId());
         if (mannequin.isEmpty()) {
             return OpenOutcome.NOT_FOUND;
@@ -36,7 +37,7 @@ public final class MannequinOpener {
         if (checkAccess && !access.canUse(viewer, mannequin.get(), body.getLocation())) {
             return OpenOutcome.NO_ACCESS;
         }
-        return opener.open(viewer, WardrobeKind.MANNEQUIN, mannequin.get().id());
+        return opener.open(viewer, WardrobeKind.MANNEQUIN, mannequin.get().id(), source);
     }
 
     /** Tells {@code viewer} why a mannequin's wardrobe did not open; nothing if it did. */

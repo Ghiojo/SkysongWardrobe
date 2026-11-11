@@ -16,6 +16,7 @@ import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import org.mockbukkit.mockbukkit.world.WorldMock;
 import org.skysongdev.skysongwardrobe.SkysongWardrobe;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
 import org.skysongdev.skysongwardrobe.render.ArmModel;
 import org.skysongdev.skysongwardrobe.wardrobe.OpenOutcome;
@@ -127,7 +128,7 @@ class MannequinInteractListenerTest {
     void aCallerThatAlreadyDecidedSkipsTheOwnerCheck() {
         PlayerMock stranger = server.addPlayer();
 
-        assertEquals(OpenOutcome.OPENED, opener.open(stranger, entity, false));
+        assertEquals(OpenOutcome.OPENED, opener.open(stranger, entity, false, OpenSource.API));
         assertTrue(looksAtMannequinMenu(stranger));
     }
 

@@ -3,6 +3,8 @@ package org.skysongdev.skysongwardrobe.apiimpl;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,6 +18,8 @@ import org.skysongdev.skysongwardrobe.api.Menus;
 import org.skysongdev.skysongwardrobe.api.OpenOptions;
 import org.skysongdev.skysongwardrobe.api.OpenResult;
 import org.skysongdev.skysongwardrobe.api.SkysongWardrobeApi;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
+import org.skysongdev.skysongwardrobe.api.event.WardrobeOpenEvent;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommand;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
 import org.skysongdev.skysongwardrobe.npc.NpcInfo;
@@ -111,6 +115,21 @@ class MenusImplTest {
         server.getScheduler().performOneTick();
 
         assertEquals(List.of(alice), closed);
+    }
+
+    @Test
+    void anOpenAnotherPluginCancelsIsCancelled() {
+        server.getPluginManager().registerEvents(new Listener() {
+            @EventHandler
+            public void onOpen(WardrobeOpenEvent event) {
+                event.setCancelled(event.getSource() == OpenSource.API);
+            }
+        }, plugin);
+
+        assertEquals(OpenResult.CANCELLED,
+                menus.openWardrobe(alice, bob.getUniqueId(), OpenOptions.defaults().access(Access.BYPASS)));
+        assertFalse(WardrobeMenu.of(alice.getOpenInventory()).isPresent());
+        assertNull(actionBar(alice));
     }
 
     @Test

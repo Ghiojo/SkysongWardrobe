@@ -8,6 +8,7 @@ import org.mockbukkit.mockbukkit.MockBukkit;
 import org.mockbukkit.mockbukkit.ServerMock;
 import org.mockbukkit.mockbukkit.entity.PlayerMock;
 import org.skysongdev.skysongwardrobe.SkysongWardrobe;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
 
 import java.nio.file.Path;
@@ -53,7 +54,7 @@ class WardrobeOpenerTest {
     void opensTheWearersWardrobeOfThatKind() {
         UUID npc = UUID.randomUUID();
 
-        assertEquals(OpenOutcome.OPENED, opener.open(alice, WardrobeKind.NPC, npc));
+        assertEquals(OpenOutcome.OPENED, opener.open(alice, WardrobeKind.NPC, npc, OpenSource.COMMAND));
 
         assertTrue(WardrobeMenu.of(alice.getOpenInventory()).filter(menu -> menu.shows(WardrobeKind.NPC, npc)).isPresent());
     }
@@ -61,22 +62,23 @@ class WardrobeOpenerTest {
     @Test
     void anExclusiveWearerOpensForOnePlayerAtATime() {
         UUID npc = UUID.randomUUID();
-        opener.open(alice, WardrobeKind.NPC, npc);
+        opener.open(alice, WardrobeKind.NPC, npc, OpenSource.COMMAND);
 
-        assertEquals(OpenOutcome.IN_USE, opener.open(bob, WardrobeKind.NPC, npc));
+        assertEquals(OpenOutcome.IN_USE, opener.open(bob, WardrobeKind.NPC, npc, OpenSource.COMMAND));
         assertFalse(WardrobeMenu.of(bob.getOpenInventory()).isPresent());
     }
 
     @Test
     void aPlayersWardrobeMayBeOpenTwice() {
-        opener.open(alice, WardrobeKind.PLAYER, alice.getUniqueId());
+        opener.open(alice, WardrobeKind.PLAYER, alice.getUniqueId(), OpenSource.COMMAND);
 
-        assertEquals(OpenOutcome.OPENED, opener.open(bob, WardrobeKind.PLAYER, alice.getUniqueId()));
+        assertEquals(OpenOutcome.OPENED, opener.open(bob, WardrobeKind.PLAYER, alice.getUniqueId(), OpenSource.COMMAND));
     }
 
     @Test
     void aKindNothingStoresIsAMistake() {
-        assertThrows(IllegalStateException.class, () -> opener.open(alice, WardrobeKind.MANNEQUIN, UUID.randomUUID()));
+        assertThrows(IllegalStateException.class,
+                () -> opener.open(alice, WardrobeKind.MANNEQUIN, UUID.randomUUID(), OpenSource.COMMAND));
     }
 
     @Test

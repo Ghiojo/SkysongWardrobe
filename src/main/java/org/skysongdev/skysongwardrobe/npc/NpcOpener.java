@@ -1,6 +1,7 @@
 package org.skysongdev.skysongwardrobe.npc;
 
 import org.bukkit.entity.Player;
+import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.wardrobe.OpenOutcome;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
@@ -27,7 +28,7 @@ public final class NpcOpener {
      *
      * @param checkAccess false when the caller already decided the viewer may open it
      */
-    public OpenOutcome open(Player viewer, Optional<NpcInfo> target, boolean checkAccess) {
+    public OpenOutcome open(Player viewer, Optional<NpcInfo> target, boolean checkAccess, OpenSource source) {
         if (target.isEmpty()) {
             return OpenOutcome.NOT_FOUND;
         }
@@ -37,7 +38,7 @@ public final class NpcOpener {
         if (checkAccess && !access.canOpen(viewer, target.get())) {
             return OpenOutcome.NO_ACCESS;
         }
-        return opener.open(viewer, WardrobeKind.NPC, target.get().id());
+        return opener.open(viewer, WardrobeKind.NPC, target.get().id(), source);
     }
 
     /** Whether {@code viewer} may open the wardrobe of {@code npc}: it is a player NPC and the access rules let them. */

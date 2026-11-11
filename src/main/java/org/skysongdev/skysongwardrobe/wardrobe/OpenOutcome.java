@@ -14,5 +14,7 @@ public enum OpenOutcome {
     /** wardrobe.yml has errors, so every wardrobe is closed. */
     WARDROBE_CLOSED,
     /** NPC wardrobes need Citizens, which is not installed or failed to hook. */
-    UNAVAILABLE
+    UNAVAILABLE,
+    /** Another plugin cancelled the open event; it explains why, so nothing is said. */
+    CANCELLED
 }

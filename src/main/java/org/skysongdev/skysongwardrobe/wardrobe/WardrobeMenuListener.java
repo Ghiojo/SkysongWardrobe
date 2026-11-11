@@ -9,6 +9,8 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.ItemStack;
+import org.skysongdev.skysongwardrobe.api.Wearer;
+import org.skysongdev.skysongwardrobe.api.event.WardrobeCloseEvent;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 
 import java.util.Locale;
@@ -79,11 +81,14 @@ public final class WardrobeMenuListener implements Listener {
 
     @EventHandler
     public void onClose(InventoryCloseEvent event) {
-        if (!(event.getInventory().getHolder() instanceof WardrobeMenu menu) || !menu.changed()
-                || !(event.getPlayer() instanceof Player editor)) {
+        if (!(event.getInventory().getHolder() instanceof WardrobeMenu menu) || !(event.getPlayer() instanceof Player editor)) {
             return;
         }
-        kinds.get(menu.kind()).ifPresent(kind -> kind.changed().accept(menu.wardrobe().owner(), editor));
+        if (menu.changed()) {
+            kinds.get(menu.kind()).ifPresent(kind -> kind.changed().accept(menu.wardrobe().owner(), editor));
+        }
+        menu.kind().wearerType().ifPresent(type -> server.getPluginManager().callEvent(
+                new WardrobeCloseEvent(editor, new Wearer(type, menu.wardrobe().owner()), menu.changed())));
     }
 
     private void onOwnInventoryClick(InventoryClickEvent event, WardrobeMenu menu, Player player) {
