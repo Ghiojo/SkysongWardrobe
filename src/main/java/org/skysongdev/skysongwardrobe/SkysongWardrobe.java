@@ -72,6 +72,7 @@ import org.skysongdev.skysongwardrobe.scheduling.BukkitTaskRunner;
 import org.skysongdev.skysongwardrobe.stats.SkysongStatsHook;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenuListener;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
 import org.skysongdev.skysongwardrobe.worldguard.RegionAccess;
 import org.skysongdev.skysongwardrobe.worldguard.WorldGuardRegionRules;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
@@ -121,6 +122,7 @@ public class SkysongWardrobe extends JavaPlugin {
     private StorageBackend storage;
     private AsyncWriter storageWriter;
     private NpcWardrobes npcWardrobes;
+    private WardrobeOpener wardrobeOpener;
     private SkysongWardrobeApiImpl api;
 
     /** WorldGuard is optional; its flags must be registered before it enables, so here. */
@@ -183,8 +185,9 @@ public class SkysongWardrobe extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new MenuListener(), this);
         wardrobes = new WardrobeRepository(storage.wardrobes(WardrobeKind.PLAYER), storageWriter, getLogger());
         loadMannequins();
-        WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobes, itemTags, configuration, getServer());
         wardrobeKinds = WardrobeKinds.of(wardrobes, mannequinWardrobes, getServer());
+        wardrobeOpener = new WardrobeOpener(wardrobeKinds, itemTags, configuration, getServer());
+        WardrobeCommand wardrobeCommand = new WardrobeCommand(wardrobeOpener, configuration, getServer());
         getServer().getPluginManager().registerEvents(new WardrobeMenuListener(wardrobeKinds, configuration, getServer(),
                 getLogger()), this);
         getServer().getPluginManager().registerEvents(new WardrobeSessionListener(wardrobes, getServer(), getLogger()), this);

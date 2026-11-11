@@ -12,16 +12,13 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.Server;
 import org.bukkit.entity.Player;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
-import org.skysongdev.skysongwardrobe.config.WardrobeLayout;
-import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
-import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenu;
-import org.skysongdev.skysongwardrobe.wardrobe.WardrobeRepository;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
 
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Supplier;
 
 /**
  * {@code /wardrobe [player]}: opens your wardrobe with {@code skysongwardrobe.wardrobe}, or
@@ -33,16 +30,12 @@ public final class WardrobeCommand {
     private static final String PLAYER = "player";
     private static final String DESCRIPTION = "Opens a wardrobe";
 
-    private final WardrobeRepository wardrobes;
-    private final Supplier<ItemTagGateway> tags;
+    private final WardrobeOpener opener;
     private final PluginConfiguration configuration;
     private final Server server;
 
-    /** @param tags looked up when a menu opens, since SkysongItems may not be ready at startup */
-    public WardrobeCommand(WardrobeRepository wardrobes, Supplier<ItemTagGateway> tags, PluginConfiguration configuration,
-                           Server server) {
-        this.wardrobes = wardrobes;
-        this.tags = tags;
+    public WardrobeCommand(WardrobeOpener opener, PluginConfiguration configuration, Server server) {
+        this.opener = opener;
         this.configuration = configuration;
         this.server = server;
     }
@@ -85,11 +78,6 @@ public final class WardrobeCommand {
     }
 
     private void open(Player viewer, UUID owner) {
-        Optional<WardrobeLayout> layout = configuration.layout();
-        if (layout.isEmpty()) {
-            configuration.messages().send(viewer, "wardrobe.closed");
-            return;
-        }
-        viewer.openInventory(new WardrobeMenu(wardrobes.load(owner), layout.get(), tags.get()).getInventory());
+        opener.tell(viewer, WardrobeKind.PLAYER, opener.open(viewer, WardrobeKind.PLAYER, owner));
     }
 }
