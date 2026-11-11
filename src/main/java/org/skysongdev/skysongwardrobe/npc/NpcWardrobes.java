@@ -1,5 +1,6 @@
 package org.skysongdev.skysongwardrobe.npc;
 
+import org.bukkit.Server;
 import org.bukkit.plugin.Plugin;
 import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
@@ -34,16 +35,18 @@ public final class NpcWardrobes {
     private final NpcAccess access;
     private final NpcSkins skins;
     private final PluginConfiguration configuration;
+    private final Server server;
     private final NpcLifecycle lifecycle;
     private final NpcArchive archive;
 
     private NpcWardrobes(NpcRepository records, WardrobeRepository wardrobes, NpcAccess access, NpcSkins skins,
-                         PluginConfiguration configuration, NpcLifecycle lifecycle, NpcArchive archive) {
+                         PluginConfiguration configuration, Server server, NpcLifecycle lifecycle, NpcArchive archive) {
         this.records = records;
         this.wardrobes = wardrobes;
         this.access = access;
         this.skins = skins;
         this.configuration = configuration;
+        this.server = server;
         this.lifecycle = lifecycle;
         this.archive = archive;
     }
@@ -81,7 +84,7 @@ public final class NpcWardrobes {
                 entry, plugin));
         NpcLifecycle lifecycle = new NpcLifecycle(records, wardrobes, archive, shared.queue(), plugin.getServer(),
                 Clock.systemUTC(), plugin.getLogger());
-        return new NpcWardrobes(records, wardrobes, access, skins, shared.configuration(), lifecycle,
+        return new NpcWardrobes(records, wardrobes, access, skins, shared.configuration(), plugin.getServer(), lifecycle,
                 archive);
     }
 
@@ -100,7 +103,7 @@ public final class NpcWardrobes {
 
     /** {@code /sw npc}, finding NPCs through {@code directory} and opening them through {@code opener}. */
     public NpcCommand command(NpcDirectory directory, NpcOpener opener, Supplier<ItemTagGateway> tags) {
-        return new NpcCommand(directory, opener, tags, configuration, archive);
+        return new NpcCommand(directory, opener, tags, configuration, archive, server);
     }
 
     /** Archives the wardrobes of removed NPCs and copies those of copied ones. */

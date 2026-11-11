@@ -1,5 +1,6 @@
 package org.skysongdev.skysongwardrobe.npc;
 
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.skysongdev.skysongwardrobe.api.event.OpenSource;
 import org.skysongdev.skysongwardrobe.wardrobe.OpenOutcome;
@@ -46,8 +47,8 @@ public final class NpcOpener {
         return skins.isDressable(npc.id()) && access.canOpen(viewer, npc);
     }
 
-    /** Tells {@code viewer} why an NPC's wardrobe did not open; nothing if it did. */
-    public void tell(Player viewer, OpenOutcome outcome) {
-        opener.tell(viewer, WardrobeKind.NPC, outcome);
+    /** Tells {@code sender} why an NPC's wardrobe did not open; nothing if it did. */
+    public void tell(CommandSender sender, OpenOutcome outcome) {
+        opener.tell(sender, WardrobeKind.NPC, outcome);
     }
 }

@@ -88,7 +88,7 @@ class NpcCommandTest {
         NpcOpener opener = new NpcOpener(skins, access,
                 new WardrobeOpener(kinds, FakeItemTags::new, plugin.configuration(), server));
         commands = new CommandRunner(new NpcCommand(directory, opener, FakeItemTags::new, plugin.configuration(),
-                new NpcArchive(folder.resolve("removed"), Logger.getAnonymousLogger())));
+                new NpcArchive(folder.resolve("removed"), Logger.getAnonymousLogger()), server));
     }
 
     @AfterEach
@@ -160,6 +160,45 @@ class NpcCommandTest {
 
         assertTrue(looksAtBaker(staff));
         assertEquals("[Wardrobe] Someone else is dressing this NPC right now.", actionBar(owner));
+    }
+
+    @Test
+    void theConsoleOpensAnNpcForAPlayerWithoutTheAccessRules() throws CommandSyntaxException {
+        commands.run(server.getConsoleSender(), "npc 7 " + stranger.getName());
+
+        assertTrue(looksAtBaker(stranger));
+    }
+
+    @Test
+    void staffOpenAnNpcForSomeoneElse() throws CommandSyntaxException {
+        PlayerMock staff = server.addPlayer();
+        staff.addAttachment(plugin, "skysongwardrobe.npc.other", true);
+
+        commands.run(staff, "npc 7 " + stranger.getName());
+
+        assertTrue(looksAtBaker(stranger));
+        assertFalse(looksAtBaker(staff));
+    }
+
+    @Test
+    void ownersCantOpenForSomeoneElse() {
+        assertThrows(CommandSyntaxException.class, () -> commands.run(owner, "npc 7 " + stranger.getName()));
+    }
+
+    @Test
+    void refusalsGoToWhoeverRanIt() throws CommandSyntaxException {
+        commands.run(server.getConsoleSender(), "npc 7 Nobody");
+        commands.run(server.getConsoleSender(), "npc 99 " + stranger.getName());
+        commands.run(server.getConsoleSender(), "npc 7");
+
+        assertEquals("[Wardrobe] Nobody is not online.", console());
+        assertEquals("[Wardrobe] Select an NPC with /npc sel, look at one, or give its number.", console());
+        assertEquals("[Wardrobe] From the console, name the player to open the wardrobe for.", console());
+        assertFalse(looksAtBaker(stranger));
+    }
+
+    private String console() {
+        return PlainTextComponentSerializer.plainText().serialize(server.getConsoleSender().nextComponentMessage());
     }
 
     @Test

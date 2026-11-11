@@ -72,6 +72,9 @@ wardrobe:
   no-access: "<prefix> <red>You can't open that wardrobe."
   # Placeholders: <player>
   unknown-player: "<prefix> <red>No player called <white><player></white> has played here."
+  # Placeholders: <player>
+  player-offline: "<prefix> <red><white><player></white> is not online."
+  players-only: "<prefix> <red>From the console, name the player to open the wardrobe for."
 
 # Placeholders: <player> (the gallery's owner) and <id>
 apply:
