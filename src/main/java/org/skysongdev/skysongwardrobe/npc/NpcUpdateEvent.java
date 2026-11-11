@@ -23,7 +23,7 @@ public final class NpcUpdateEvent extends Event {
         return npc;
     }
 
-    /** Who closed the menu, and hears how the render went. */
+    /** Who closed the menu, and hears how the render went; null when another plugin changed it through the API. */
     public Player getEditor() {
         return editor;
     }

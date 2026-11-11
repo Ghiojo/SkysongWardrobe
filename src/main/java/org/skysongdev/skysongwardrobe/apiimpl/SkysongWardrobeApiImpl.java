@@ -7,8 +7,12 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.ServicesManager;
 import org.skysongdev.skysongwardrobe.api.Menus;
 import org.skysongdev.skysongwardrobe.api.Npcs;
+import org.skysongdev.skysongwardrobe.api.Outfits;
 import org.skysongdev.skysongwardrobe.api.SkysongWardrobeApi;
+import org.skysongdev.skysongwardrobe.config.PluginConfiguration;
 import org.skysongdev.skysongwardrobe.mannequin.MannequinOpener;
+import org.skysongdev.skysongwardrobe.mannequin.MannequinRepository;
+import org.skysongdev.skysongwardrobe.wardrobe.WardrobeEditor;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeOpener;
 
 import java.util.Optional;
@@ -24,17 +28,23 @@ public final class SkysongWardrobeApiImpl implements SkysongWardrobeApi {
 
     private final Menus menus;
     private final NpcsImpl npcs;
+    private final Outfits outfits;
+
+    /** The plugin's pieces the API works through. */
+    public record Parts(WardrobeOpener opener, MannequinOpener mannequinOpener, WardrobeEditor editor,
+                        PluginConfiguration configuration, MannequinRepository mannequins) {
+    }
 
     /**
-     * An API on the plugin's openers, guarded to the server's main thread.
+     * An API on the plugin's openers and editor, guarded to the server's main thread.
      *
      * @param npcs the Citizens hook, empty while Citizens isn't enabled
      */
-    public SkysongWardrobeApiImpl(WardrobeOpener opener, MannequinOpener mannequins, Supplier<Optional<NpcHooks>> npcs,
-                                  Server server) {
+    public SkysongWardrobeApiImpl(Parts parts, Supplier<Optional<NpcHooks>> npcs, Server server) {
         MainThread mainThread = new MainThread(server::isPrimaryThread);
-        this.menus = new MenusImpl(mainThread, opener, mannequins, npcs, server);
+        this.menus = new MenusImpl(mainThread, parts.opener(), parts.mannequinOpener(), npcs, server);
         this.npcs = new NpcsImpl(mainThread, npcs);
+        this.outfits = new OutfitsImpl(mainThread, parts.editor(), parts.configuration(), parts.mannequins(), npcs);
     }
 
     @Override
@@ -50,6 +60,11 @@ public final class SkysongWardrobeApiImpl implements SkysongWardrobeApi {
     @Override
     public Npcs npcs() {
         return npcs;
+    }
+
+    @Override
+    public Outfits outfits() {
+        return outfits;
     }
 
     /** Drops the NPC access rules of plugins that disable; register it as a listener. */
