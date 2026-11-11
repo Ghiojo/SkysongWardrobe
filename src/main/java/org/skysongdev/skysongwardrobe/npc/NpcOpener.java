@@ -40,6 +40,11 @@ public final class NpcOpener {
         return opener.open(viewer, WardrobeKind.NPC, target.get().id());
     }
 
+    /** Whether {@code viewer} may open the wardrobe of {@code npc}: it is a player NPC and the access rules let them. */
+    public boolean mayOpen(Player viewer, NpcInfo npc) {
+        return skins.isDressable(npc.id()) && access.canOpen(viewer, npc);
+    }
+
     /** Tells {@code viewer} why an NPC's wardrobe did not open; nothing if it did. */
     public void tell(Player viewer, OpenOutcome outcome) {
         opener.tell(viewer, WardrobeKind.NPC, outcome);
