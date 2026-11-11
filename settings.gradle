@@ -1,1 +1,4 @@
 rootProject.name = 'SkysongWardrobe'
+
+// The public API other plugins compile against. Its classes ship inside the plugin jar.
+include 'api'

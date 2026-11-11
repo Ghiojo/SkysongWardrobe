@@ -5,6 +5,9 @@ plugins {
     id 'com.gradleup.shadow' version '8.3.5'
 }
 
+// The api module is configured first so its classes can be bundled into the plugin jar.
+evaluationDependsOn(':api')
+
 group = 'org.skysongdev'
 version = '1.0.0'
 
@@ -63,7 +66,12 @@ repositories {
 }
 
 dependencies {
+    // The public API (api/). shadowJar bundles its classes into the plugin jar, unrelocated,
+    // so the server has exactly one copy; plugins that use it compile against it with
+    // compileOnly and never shade it.
+    implementation project(':api')
     compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+    compileOnly 'org.jetbrains:annotations:26.0.2'
     // The SkysongItems API, as JitPack publishes it from the SkysongItems git tag. It ships
     // inside the SkysongItems jar on the server, so it is never shaded.
     compileOnly 'com.github.Ghiojo:Skysong-Special-Items:1.0.1'
