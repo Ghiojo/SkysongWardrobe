@@ -56,6 +56,11 @@ class NpcCommandTest {
         }
 
         @Override
+        public Optional<NpcInfo> byId(UUID id) {
+            return byNumber.values().stream().filter(npc -> npc.id().equals(id)).findFirst();
+        }
+
+        @Override
         public Optional<NpcInfo> selected(CommandSender sender) {
             return Optional.ofNullable(selected.get(((Player) sender).getUniqueId()));
         }

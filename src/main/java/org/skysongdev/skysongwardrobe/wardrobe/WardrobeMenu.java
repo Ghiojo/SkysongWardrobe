@@ -3,6 +3,7 @@ package org.skysongdev.skysongwardrobe.wardrobe;
 import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.InventoryView;
@@ -15,6 +16,7 @@ import org.skysongdev.skysongwardrobe.items.ItemTagGateway;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 /**
  * One open wardrobe menu: filler everywhere but the slots, which show the stored items. A kind
@@ -45,6 +47,7 @@ public final class WardrobeMenu implements InventoryHolder {
     private final boolean equipment;
     private final Inventory inventory;
     private boolean changed;
+    private Consumer<Player> closeAction;
 
     /** A player's wardrobe menu. */
     public WardrobeMenu(Wardrobe wardrobe, WardrobeLayout layout, ItemTagGateway tags) {
@@ -85,6 +88,16 @@ public final class WardrobeMenu implements InventoryHolder {
     /** Whether this menu shows the wardrobe of {@code wearer}, a wearer of the given kind. */
     public boolean shows(WardrobeKind kind, UUID wearer) {
         return this.kind == kind && wardrobe.owner().equals(wearer);
+    }
+
+    /** Runs {@code action} with the viewer once they close this menu; see {@link #closeAction()}. */
+    public void onClose(Consumer<Player> action) {
+        this.closeAction = action;
+    }
+
+    /** What to run once the viewer closes this menu, such as reopening another plugin's menu. */
+    public Optional<Consumer<Player>> closeAction() {
+        return Optional.ofNullable(closeAction);
     }
 
     /** Whether any item went in or out since the menu opened. */

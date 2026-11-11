@@ -69,6 +69,7 @@ wardrobe:
   inventory-full: "<prefix> <red>Your inventory is full."
   save-error: "<prefix> <red>Could not save the wardrobe. Please tell staff."
   closed: "<prefix> <red>The wardrobe is closed until staff fix wardrobe.yml."
+  no-access: "<prefix> <red>You can't open that wardrobe."
   # Placeholders: <player>
   unknown-player: "<prefix> <red>No player called <white><player></white> has played here."
 
@@ -113,6 +114,7 @@ mannequin:
   chunk-limit: "<prefix> <red>There are too many mannequins around here."
   save-error: "<prefix> <red>Could not save the mannequin. Please tell staff."
   no-access: "<prefix> <red>This mannequin isn't yours."
+  not-found: "<prefix> <red>That mannequin isn't here any more."
   in-use: "<prefix> <red>Someone else is dressing this mannequin right now."
   # Shown above the hotbar when a mannequin is punched without sneaking.
   break-hint: "<gray>Sneak and punch to pick this mannequin up."
@@ -120,6 +122,7 @@ mannequin:
 npc:
   not-found: "<prefix> <red>Select an NPC with /npc sel, look at one, or give its number."
   not-a-player: "<prefix> <red>Only player NPCs can wear a wardrobe."
+  unavailable: "<prefix> <red>NPC wardrobes need Citizens."
   no-access: "<prefix> <red>This NPC isn't yours."
   in-use: "<prefix> <red>Someone else is dressing this NPC right now."
   removed:
