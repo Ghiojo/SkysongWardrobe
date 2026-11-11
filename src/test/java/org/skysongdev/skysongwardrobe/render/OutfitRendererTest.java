@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -67,6 +68,29 @@ class OutfitRendererTest {
 
         assertEquals(new OutfitRenderer.Outcome.Ready(SIGNED), render(Optional.of(BARE)));
         assertFalse(queue.isWaiting(WEARER));
+    }
+
+    @Test
+    void observersHearOfOutfitsReadyAtOnceButNotOfQueuedOnes() {
+        List<UUID> heard = new ArrayList<>();
+        outfits.observe(new RenderListener() {
+            @Override
+            public void signed(UUID wearer, WearerKind kind, SignedTexture texture) {
+                heard.add(wearer);
+            }
+
+            @Override
+            public void failed(UUID wearer, WearerKind kind, String reason) {
+                heard.add(null);
+            }
+        });
+
+        render(Optional.of(BARE));
+        assertEquals(List.of(), heard);
+        when(layers.layers(anyList())).thenReturn(List.of());
+        render(Optional.of(BARE));
+
+        assertEquals(List.of(WEARER), heard);
     }
 
     @Test
