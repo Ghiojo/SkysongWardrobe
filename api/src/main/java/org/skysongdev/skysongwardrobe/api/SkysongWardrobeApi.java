@@ -63,4 +63,7 @@ public interface SkysongWardrobeApi {
 
     /** Opens wardrobe menus: a player's, a Citizens NPC's or a mannequin's. */
     @NotNull Menus menus();
+
+    /** Citizens NPC wardrobes: finding NPCs, who may open them, and extra access rules. */
+    @NotNull Npcs npcs();
 }

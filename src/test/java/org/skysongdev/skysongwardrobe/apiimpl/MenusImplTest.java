@@ -2,7 +2,6 @@ package org.skysongdev.skysongwardrobe.apiimpl;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
-import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,11 +18,7 @@ import org.skysongdev.skysongwardrobe.api.OpenResult;
 import org.skysongdev.skysongwardrobe.api.SkysongWardrobeApi;
 import org.skysongdev.skysongwardrobe.commands.WardrobeCommand;
 import org.skysongdev.skysongwardrobe.items.FakeItemTags;
-import org.skysongdev.skysongwardrobe.npc.NpcAccess;
-import org.skysongdev.skysongwardrobe.npc.NpcDirectory;
 import org.skysongdev.skysongwardrobe.npc.NpcInfo;
-import org.skysongdev.skysongwardrobe.npc.NpcOpener;
-import org.skysongdev.skysongwardrobe.npc.NpcSkins;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKind;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeKinds;
 import org.skysongdev.skysongwardrobe.wardrobe.WardrobeMenu;
@@ -42,8 +37,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 class MenusImplTest {
     @TempDir
@@ -160,32 +153,7 @@ class MenusImplTest {
     }
 
     private Menus withNpc(NpcInfo npc) {
-        NpcDirectory directory = new NpcDirectory() {
-            @Override
-            public Optional<NpcInfo> byNumber(int number) {
-                return number == npc.number() ? Optional.of(npc) : Optional.empty();
-            }
-
-            @Override
-            public Optional<NpcInfo> byId(UUID id) {
-                return id.equals(npc.id()) ? Optional.of(npc) : Optional.empty();
-            }
-
-            @Override
-            public Optional<NpcInfo> selected(CommandSender sender) {
-                return Optional.empty();
-            }
-
-            @Override
-            public Optional<NpcInfo> lookedAt(Player player) {
-                return Optional.empty();
-            }
-        };
-        NpcSkins skins = mock(NpcSkins.class);
-        when(skins.isDressable(npc.id())).thenReturn(true);
-        NpcOpener npcOpener = new NpcOpener(skins,
-                NpcAccess.standard(() -> plugin.configuration().settings().npcPermissions()), opener());
-        return new MenusImpl(new MainThread(() -> true), opener(), null,
-                () -> Optional.of(new NpcHooks(directory, npcOpener)), server);
+        NpcHooks hooks = NpcFixture.hooks(opener(), () -> plugin.configuration().settings().npcPermissions(), npc);
+        return new MenusImpl(new MainThread(() -> true), opener(), null, () -> Optional.of(hooks), server);
     }
 }

@@ -200,7 +200,7 @@ public class SkysongWardrobe extends JavaPlugin {
         startMannequins(itemTags, outfits);
         hookCitizens(outfits);
         npcWardrobes().ifPresent(npcs -> {
-            npcHooks = new NpcHooks(CitizensHook.directory(), npcs.opener(wardrobeOpener));
+            npcHooks = new NpcHooks(CitizensHook.directory(), npcs.opener(wardrobeOpener), npcs.access());
             subCommands.add(npcs.command(npcHooks.directory(), npcHooks.opener(), itemTags));
         });
         WardrobeCommands commands = new WardrobeCommands(subCommands);
@@ -212,6 +212,7 @@ public class SkysongWardrobe extends JavaPlugin {
         });
         getServer().getPluginManager().registerEvents(new CloseActions(new BukkitTaskRunner(this)), this);
         api = new SkysongWardrobeApiImpl(wardrobeOpener, mannequinOpener, () -> Optional.ofNullable(npcHooks), getServer());
+        getServer().getPluginManager().registerEvents(api.npcRules(), this);
         api.register(getServer().getServicesManager(), this);
     }
 

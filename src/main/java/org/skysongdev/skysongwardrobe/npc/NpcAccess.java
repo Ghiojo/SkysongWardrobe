@@ -37,6 +37,11 @@ public final class NpcAccess {
         return this;
     }
 
+    /** Removes a rule added with {@link #register}. */
+    public void unregister(NpcAccessRule rule) {
+        rules.remove(rule);
+    }
+
     public boolean canOpen(Player viewer, NpcInfo npc) {
         return rules.stream().anyMatch(rule -> rule.allows(viewer, npc));
     }
