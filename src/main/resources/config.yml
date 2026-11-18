@@ -28,6 +28,13 @@ mineskin:
   # MineSkin's gallery and search. Private also hides them from everyone with the link, but
   # not every MineSkin plan allows it. Public is never used.
   visibility: unlisted
+  # When MineSkin has trouble (a 5xx error, a timeout, or it can't be reached), every upload pauses and
+  # the skin is sent again later, until it is signed or the wardrobe changes. The first wait is
+  # first-delay-seconds; each further error in a row doubles it, up to max-delay-seconds. A refused
+  # API key also pauses every upload for max-delay-seconds, or until /sw reload.
+  retry:
+    first-delay-seconds: 30
+    max-delay-seconds: 300
 
 mannequins:
   # Holding ANY one of these lets a player place mannequins, and open and break their own.

@@ -2,6 +2,7 @@ package org.skysongdev.skysongwardrobe.config;
 
 import org.bukkit.configuration.ConfigurationSection;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,7 @@ public final class SettingsParser {
                 nonNegativeInt(config, "render.upload-cooldown-seconds", DEFAULT_UPLOAD_COOLDOWN_SECONDS),
                 config.getString("mineskin.api-key", "").trim(),
                 visibility(config, "mineskin.visibility"),
+                retryDelays(config),
                 new MannequinSettings(
                         permissions(config, "mannequins.permissions", DEFAULT_MANNEQUIN_PERMISSION),
                         nonNegativeInt(config, "mannequins.max-per-player", DEFAULT_MANNEQUINS_PER_PLAYER),
@@ -73,6 +75,18 @@ public final class SettingsParser {
             return DEFAULT_SKIN_VISIBILITY;
         }
         return named.get();
+    }
+
+    private RetryDelays retryDelays(ConfigurationSection config) {
+        String firstPath = "mineskin.retry.first-delay-seconds";
+        String maxPath = "mineskin.retry.max-delay-seconds";
+        int first = positiveInt(config, firstPath, (int) RetryDelays.DEFAULT.first().toSeconds());
+        int max = positiveInt(config, maxPath, (int) RetryDelays.DEFAULT.max().toSeconds());
+        if (max < first) {
+            warnings.add(maxPath + " is shorter than " + firstPath + ", so it uses " + first + ".");
+            max = first;
+        }
+        return new RetryDelays(Duration.ofSeconds(first), Duration.ofSeconds(max));
     }
 
     private int positiveInt(ConfigurationSection config, String path, int fallback) {

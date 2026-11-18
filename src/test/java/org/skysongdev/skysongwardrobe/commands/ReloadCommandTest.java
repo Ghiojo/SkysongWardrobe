@@ -13,6 +13,7 @@ import org.skysongdev.skysongwardrobe.SkysongWardrobe;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -45,6 +46,18 @@ class ReloadCommandTest {
 
         assertTrue(plugin.configuration().settings().verbose());
         assertEquals("[Wardrobe] Reloaded config.yml, messages.yml and wardrobe.yml.", plain(admin));
+    }
+
+    @Test
+    void runsTheAfterReloadStepOnceTheFilesAreRead() throws CommandSyntaxException {
+        PlayerMock admin = server.addPlayer();
+        admin.setOp(true);
+        AtomicInteger runs = new AtomicInteger();
+        CommandRunner withStep = new CommandRunner(new ReloadCommand(plugin.configuration(), runs::incrementAndGet));
+
+        withStep.run(admin, "reload");
+
+        assertEquals(1, runs.get());
     }
 
     @Test

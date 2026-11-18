@@ -325,12 +325,27 @@ still works, but new looks are not shown to players.
 
 Skins are uploaded to MineSkin as **unlisted** by default, so they never show up in
 MineSkin's public gallery or search. Set `mineskin.visibility: private` to also hide them
-from anyone who has the link, if your MineSkin plan allows private skins; otherwise uploads
-fail with "you are not allowed to generate private skins". Skins are never uploaded as public.
+from anyone who has the link, if your MineSkin plan allows private skins; otherwise MineSkin
+answers "you are not allowed to generate private skins" and uploads pause as for a refused key
+(below). Skins are never uploaded as public.
 
-Keep the key private. If MineSkin asks the plugin to slow down, uploads pause and resume
-by themselves. `render.upload-cooldown-seconds` sets the shortest time between two
-uploads for the same player.
+Keep the key private. The plugin sends one upload at a time, and
+`render.upload-cooldown-seconds` sets the shortest time between two uploads for the same
+player. No look is lost when MineSkin has trouble; it is sent again until it is signed or
+the wardrobe changes:
+
+- **MineSkin asks the plugin to slow down** (HTTP 429): every upload pauses for as long as
+  MineSkin says.
+- **MineSkin has trouble** (a 5xx error, a timeout, or it can't be reached): every upload
+  pauses for `mineskin.retry.first-delay-seconds` (30), doubling after each error in a row up
+  to `mineskin.retry.max-delay-seconds` (300). The first success starts it over.
+- **The API key is missing or refused** (HTTP 401 or 403): every upload pauses for
+  `max-delay-seconds`, or until `/sw reload` reads a new key.
+- **MineSkin won't take the skin** (any other error): that look is dropped, since sending it
+  again can't work.
+
+The console warns once per look, at its first error, and says when it is finally signed.
+Set `verbose: true` to log every retry.
 
 ## API for other plugins
 
