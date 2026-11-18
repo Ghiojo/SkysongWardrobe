@@ -46,7 +46,7 @@ class ConfiguredSignerTest {
     void failsWithoutAKey() {
         key = " ";
 
-        assertInstanceOf(SignResult.Failed.class, signer.sign(SKIN, ArmModel.CLASSIC));
+        assertInstanceOf(SignResult.KeyRejected.class, signer.sign(SKIN, ArmModel.CLASSIC));
         assertTrue(built.isEmpty());
     }
 }

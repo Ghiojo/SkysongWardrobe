@@ -27,7 +27,7 @@ public final class ConfiguredSigner implements SkinSigner {
     public SignResult sign(BufferedImage skin, ArmModel armModel) {
         String key = apiKey.get();
         if (key.isBlank()) {
-            return new SignResult.Failed("config.yml has no MineSkin API key");
+            return new SignResult.KeyRejected("config.yml has no MineSkin API key");
         }
         return signer(key).sign(skin, armModel);
     }

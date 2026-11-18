@@ -3,6 +3,8 @@ package org.skysongdev.skysongwardrobe.render;
 import com.google.gson.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mineskin.GenerateClient;
 import org.mineskin.GenerateOptions;
 import org.mineskin.MineSkinClient;
@@ -14,6 +16,7 @@ import org.mineskin.data.ValueAndSignature;
 import org.mineskin.data.Variant;
 import org.mineskin.data.Visibility;
 import org.mineskin.exception.MineSkinRequestException;
+import org.mineskin.exception.MineskinException;
 import org.mineskin.request.GenerateRequest;
 import org.mineskin.response.GenerateResponse;
 import org.mockito.ArgumentCaptor;
@@ -143,18 +146,54 @@ class MineSkinSignerTest {
     }
 
     @Test
-    void failsWhenMineSkinCannotBeReached() {
-        answer(CompletableFuture.failedFuture(new IOException("no route")));
+    void anotherClientErrorIsFinal() {
+        answer(CompletableFuture.failedFuture(new MineSkinRequestException("bad", "Bad request", errorResponse(422))));
 
-        SignResult.Failed failed = assertInstanceOf(SignResult.Failed.class, signer.sign(SKIN, ArmModel.CLASSIC));
-        assertTrue(failed.reason().contains("no route"), failed.reason());
+        assertInstanceOf(SignResult.Failed.class, signer.sign(SKIN, ArmModel.CLASSIC));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {500, 502, 503, 504, 408})
+    void aServerErrorOrTimeoutMeansMineSkinIsUnavailable(int status) {
+        GenerateResponse busy = errorResponse(status);
+        when(busy.getFirstError()).thenReturn(Optional.of(new CodeAndMessage("timeout", "generator request timed out")));
+        answer(CompletableFuture.failedFuture(new MineSkinRequestException("timeout", "timed out", busy)));
+
+        SignResult.Unavailable unavailable = assertInstanceOf(SignResult.Unavailable.class, signer.sign(SKIN, ArmModel.CLASSIC));
+        assertTrue(unavailable.reason().contains("HTTP " + status) && unavailable.reason().contains("generator request timed out"),
+                unavailable.reason());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {401, 403})
+    void aRefusedKeyIsReportedAsSuch(int status) {
+        GenerateResponse refused = errorResponse(status);
+        answer(CompletableFuture.failedFuture(new MineSkinRequestException("unauthorized", "Bad key", refused)));
+
+        SignResult.KeyRejected rejected = assertInstanceOf(SignResult.KeyRejected.class, signer.sign(SKIN, ArmModel.CLASSIC));
+        assertTrue(rejected.reason().contains("HTTP " + status) && rejected.reason().contains("Bad key"), rejected.reason());
     }
 
     @Test
-    void failsWhenTheClientThrowsRightAway() {
+    void isUnavailableWhenMineSkinCannotBeReached() {
+        answer(CompletableFuture.failedFuture(new IOException("no route")));
+
+        SignResult.Unavailable unavailable = assertInstanceOf(SignResult.Unavailable.class, signer.sign(SKIN, ArmModel.CLASSIC));
+        assertTrue(unavailable.reason().contains("no route"), unavailable.reason());
+    }
+
+    @Test
+    void isUnavailableWhenTheClientGivesUpWaitingForTheJob() {
+        answer(CompletableFuture.failedFuture(new MineskinException("Max attempts reached")));
+
+        assertInstanceOf(SignResult.Unavailable.class, signer.sign(SKIN, ArmModel.CLASSIC));
+    }
+
+    @Test
+    void isUnavailableWhenTheClientThrowsRightAway() {
         when(generate.submitAndWait(any())).thenThrow(new IllegalStateException("broken"));
 
-        assertInstanceOf(SignResult.Failed.class, signer.sign(SKIN, ArmModel.CLASSIC));
+        assertInstanceOf(SignResult.Unavailable.class, signer.sign(SKIN, ArmModel.CLASSIC));
     }
 
     @Test

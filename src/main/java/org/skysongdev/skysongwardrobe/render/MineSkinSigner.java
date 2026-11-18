@@ -25,7 +25,11 @@ import java.util.function.Supplier;
  * config.yml says, so the players' skins never appear in MineSkin's gallery or search.
  */
 public final class MineSkinSigner implements SkinSigner {
+    private static final int UNAUTHORIZED = 401;
+    private static final int FORBIDDEN = 403;
+    private static final int REQUEST_TIMEOUT = 408;
     private static final int TOO_MANY_REQUESTS = 429;
+    private static final int SERVER_ERROR = 500;
     private static final String USER_AGENT = "SkysongWardrobe";
 
     private final MineSkinClient client;
@@ -64,7 +68,7 @@ public final class MineSkinSigner implements SkinSigner {
             return failure(failed.getCause() == null ? failed : failed.getCause());
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
-            return new SignResult.Failed("interrupted while waiting for MineSkin");
+            return new SignResult.Unavailable("interrupted while waiting for MineSkin");
         } catch (RuntimeException failed) {
             return failure(failed);
         }
@@ -90,14 +94,26 @@ public final class MineSkinSigner implements SkinSigner {
 
     private SignResult failure(Throwable cause) {
         if (cause instanceof MineSkinRequestException request && request.getResponse() != null) {
-            MineSkinResponse<?> response = request.getResponse();
-            if (response.getStatus() == TOO_MANY_REQUESTS) {
-                return new SignResult.RateLimited(retryAfter(response));
-            }
-            return new SignResult.Failed("MineSkin refused the skin (HTTP " + response.getStatus() + "): "
-                    + response.getFirstError().map(CodeAndMessage::message).orElse(String.valueOf(cause.getMessage())));
+            return refused(request.getResponse(), cause);
         }
-        return new SignResult.Failed("could not reach MineSkin: " + cause);
+        return new SignResult.Unavailable("could not reach MineSkin: " + cause);
+    }
+
+    /** Sorts an HTTP error by whether waiting, a new key, or nothing at all could fix it. */
+    private SignResult refused(MineSkinResponse<?> response, Throwable cause) {
+        int status = response.getStatus();
+        if (status == TOO_MANY_REQUESTS) {
+            return new SignResult.RateLimited(retryAfter(response));
+        }
+        String reason = "MineSkin refused the skin (HTTP " + status + "): "
+                + response.getFirstError().map(CodeAndMessage::message).orElse(String.valueOf(cause.getMessage()));
+        if (status == UNAUTHORIZED || status == FORBIDDEN) {
+            return new SignResult.KeyRejected(reason);
+        }
+        if (status >= SERVER_ERROR || status == REQUEST_TIMEOUT) {
+            return new SignResult.Unavailable(reason);
+        }
+        return new SignResult.Failed(reason);
     }
 
     private Duration retryAfter(MineSkinResponse<?> response) {
