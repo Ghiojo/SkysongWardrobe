@@ -19,7 +19,27 @@ public sealed interface SignResult {
         }
     }
 
-    /** The skin could not be signed, for a reason that waiting won't fix. */
+    /**
+     * The signer could not sign right now, such as when MineSkin answers 5xx, times out or can't be reached. The
+     * same skin can be sent again later.
+     */
+    record Unavailable(String reason) implements SignResult {
+        public Unavailable {
+            Objects.requireNonNull(reason, "reason");
+        }
+    }
+
+    /**
+     * The API key is missing or MineSkin turned it down (HTTP 401 or 403). No skin can be signed until config.yml
+     * changes, so the skin can be sent again after that.
+     */
+    record KeyRejected(String reason) implements SignResult {
+        public KeyRejected {
+            Objects.requireNonNull(reason, "reason");
+        }
+    }
+
+    /** This skin could not be signed, for a reason that sending it again won't fix. */
     record Failed(String reason) implements SignResult {
         public Failed {
             Objects.requireNonNull(reason, "reason");

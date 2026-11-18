@@ -120,6 +120,8 @@ public final class RenderQueue {
         switch (result) {
             case SignResult.Signed signed -> signed(job, signed.texture());
             case SignResult.RateLimited limited -> pause(limited.retryAfter());
+            case SignResult.Unavailable unavailable -> failed(job, unavailable.reason());
+            case SignResult.KeyRejected rejected -> failed(job, rejected.reason());
             case SignResult.Failed failed -> failed(job, failed.reason());
         }
     }
