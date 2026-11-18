@@ -4,6 +4,7 @@ import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -33,6 +34,7 @@ class SettingsParserTest {
         assertEquals("", settings.mineSkinApiKey());
         assertFalse(settings.hasMineSkinApiKey());
         assertEquals(SkinVisibility.UNLISTED, settings.skinVisibility());
+        assertEquals(RetryDelays.DEFAULT, settings.mineSkinRetry());
         assertEquals(new MannequinSettings(List.of("skysongwardrobe.mannequin"), 0, 15), settings.mannequins());
         assertEquals(List.of("skysongwardrobe.npc"), settings.npcPermissions());
         assertTrue(parser.warnings().isEmpty());
@@ -104,6 +106,45 @@ class SettingsParserTest {
         assertEquals(10, settings.downloadTimeoutSeconds());
         assertEquals(30, settings.uploadCooldownSeconds());
         assertEquals(3, parser.warnings().size());
+    }
+
+    @Test
+    void readsTheRetryDelays() throws InvalidConfigurationException {
+        WardrobeSettings settings = parser.parse(yaml("""
+                mineskin:
+                  retry:
+                    first-delay-seconds: 10
+                    max-delay-seconds: 600
+                """));
+
+        assertEquals(new RetryDelays(Duration.ofSeconds(10), Duration.ofMinutes(10)), settings.mineSkinRetry());
+        assertTrue(parser.warnings().isEmpty());
+    }
+
+    @Test
+    void aLongestRetryDelayShorterThanTheFirstUsesTheFirstWithAWarning() throws InvalidConfigurationException {
+        WardrobeSettings settings = parser.parse(yaml("""
+                mineskin:
+                  retry:
+                    first-delay-seconds: 60
+                    max-delay-seconds: 20
+                """));
+
+        assertEquals(new RetryDelays(Duration.ofMinutes(1), Duration.ofMinutes(1)), settings.mineSkinRetry());
+        assertTrue(parser.warnings().getFirst().startsWith("mineskin.retry.max-delay-seconds"), parser.warnings().toString());
+    }
+
+    @Test
+    void invalidRetryDelaysFallBackWithAWarning() throws InvalidConfigurationException {
+        WardrobeSettings settings = parser.parse(yaml("""
+                mineskin:
+                  retry:
+                    first-delay-seconds: 0
+                    max-delay-seconds: later
+                """));
+
+        assertEquals(RetryDelays.DEFAULT, settings.mineSkinRetry());
+        assertEquals(2, parser.warnings().size());
     }
 
     @Test

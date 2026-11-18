@@ -65,6 +65,7 @@ import org.skysongdev.skysongwardrobe.render.OutfitRenderer;
 import org.skysongdev.skysongwardrobe.render.RenderQueue;
 import org.skysongdev.skysongwardrobe.render.RenderRouter;
 import org.skysongdev.skysongwardrobe.render.RenderTrigger;
+import org.skysongdev.skysongwardrobe.render.RetryBackoff;
 import org.skysongdev.skysongwardrobe.render.SkinApplier;
 import org.skysongdev.skysongwardrobe.render.SkinRenderer;
 import org.skysongdev.skysongwardrobe.render.TextureCache;
@@ -180,7 +181,7 @@ public class SkysongWardrobe extends JavaPlugin {
                 new DialogConfirmationPrompt(), configuration, new BukkitTaskRunner(this), Clock.systemUTC(), getLogger());
 
         List<SubCommand> subCommands = new ArrayList<>(List.of(
-                new ReloadCommand(configuration),
+                new ReloadCommand(configuration, this::resumeRendering),
                 new StorageImportCommand(storage.importers(getDataFolder().toPath()), configuration,
                         new BukkitTaskRunner(this), getLogger()),
                 new UploadCommand(uploader, configuration),
@@ -315,7 +316,8 @@ public class SkysongWardrobe extends JavaPlugin {
                 () -> Duration.ofSeconds(configuration.settings().uploadCooldownSeconds()), Clock.systemUTC(),
                 renderRouter = new RenderRouter().route(WearerKind.PLAYER, applier)
                         .route(WearerKind.MANNEQUIN, mannequinApplier),
-                getLogger());
+                new RetryBackoff(() -> configuration.settings().mineSkinRetry()),
+                () -> configuration.settings().verbose(), getLogger());
         OutfitRenderer outfits = new OutfitRenderer(itemTags,
                 new LayerResolver(galleries, () -> configuration.settings().verbose(), getLogger()),
                 cache, renderQueue, () -> configuration.settings().hasMineSkinApiKey());
@@ -324,6 +326,13 @@ public class SkysongWardrobe extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new RenderTrigger(renderer, bases), this);
         getServer().getScheduler().runTaskTimerAsynchronously(this, renderQueue::runNext, QUEUE_PERIOD_TICKS, QUEUE_PERIOD_TICKS);
         return outfits;
+    }
+
+    /** After {@code /sw reload}: a new API key may work, so uploads paused for a refused key try again at once. */
+    private void resumeRendering() {
+        if (renderQueue != null) {
+            renderQueue.resume();
+        }
     }
 
     /** Built per upload, so a reload's new size limit and timeout apply at once. */
